@@ -1,45 +1,95 @@
-mod splitter;
+mod text_generator;
 pub mod tui;
+mod ui;
 mod utils;
 
 use color_eyre::{eyre::WrapErr, Result};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
+use rand::seq::SliceRandom;
 use ratatui::style::palette::tailwind::{EMERALD, RED, SLATE};
 use ratatui::style::Color;
-use ratatui::{
-    prelude::*,
-    symbols::border,
-    widgets::{block::Title, *},
-};
-use splitter::{split_string, CharState, Character};
+use std::collections::HashMap;
+use std::time::Instant;
+use text_generator::{Character, TextGenerator};
+use ui::ui;
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct App {
-    lines: Vec<Vec<Character>>,
+    characters: Vec<Vec<Character>>,
+    stats: HashMap<char, TypingStat>,
     cur_line: usize,
     position: usize,
+    typed_chars: usize,
+    errors: usize,
     exit: bool,
+    start_time: Instant,
+    last_action_time: Instant,
+    text_generator: TextGenerator,
+}
+
+#[derive(Debug, Default)]
+struct TypingStat {
+    ms_average: usize,
+    typed: usize,
+    errors: usize,
+    acc_speed: f64, // Typing speed divided by accuracy, large is worse
+}
+impl PartialEq for TypingStat {
+    fn eq(&self, other: &Self) -> bool {
+        self.acc_speed == other.acc_speed
+    }
+}
+
+impl Eq for TypingStat {}
+impl Ord for TypingStat {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.acc_speed.partial_cmp(&other.acc_speed).unwrap()
+    }
+}
+impl PartialOrd for TypingStat {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+struct Colors {
+    untyped: Color,
+    correct: Color,
+    incorrect: Color,
 }
 
 impl App {
-    fn load_lines(&mut self) -> Result<()> {
-        let text = include_str!("../assets/text.txt");
-        self.lines = split_string(text, 40);
-        Ok(())
+    pub fn new() -> Self {
+        Self {
+            characters: vec![],
+            stats: HashMap::new(),
+            cur_line: 0,
+            position: 0,
+            typed_chars: 0,
+            errors: 0,
+            exit: false,
+            start_time: Instant::now(),
+            last_action_time: Instant::now(),
+            text_generator: TextGenerator::new(),
+        }
     }
 
     /// runs the application's main loop until the user quits
     pub fn run(&mut self, terminal: &mut tui::Tui) -> Result<()> {
-        self.load_lines().unwrap();
+        self.text_generator
+            .load_snippets()
+            .wrap_err("Loading snippets failed.")?;
+        self.text_generator.calculate_character_weights();
+
+        // Generate some initial snippets
+        self.add_snippet();
+
+        self.start_time = std::time::Instant::now();
         while !self.exit {
-            terminal.draw(|frame| self.render_frame(frame))?;
+            terminal.draw(|frame| ui(frame, &self))?;
             self.handle_events().wrap_err("handle events failed")?;
         }
         Ok(())
-    }
-
-    fn render_frame(&self, frame: &mut Frame) {
-        frame.render_widget(self, frame.size());
     }
 
     /// updates the application's state based on user input
@@ -54,15 +104,55 @@ impl App {
         }
     }
 
+    fn add_snippet(&mut self) {
+        let mut stats: Vec<_> = self.stats.iter().collect();
+        stats.sort_by(|a, b| b.1.cmp(a.1));
+        let top_5: Vec<_> = stats.into_iter().take(5).collect();
+
+        let random_worst_char = top_5
+            .choose(&mut rand::thread_rng())
+            .map(|(c, _)| *c)
+            .unwrap_or(&'j');
+
+        let mut characters = self
+            .text_generator
+            .generate_characters(*random_worst_char, 40);
+        self.characters.append(&mut characters);
+    }
+
     fn check_character(&mut self, c: char) {
-        self.lines[self.cur_line][self.position].set_typed(c);
+        self.typed_chars += 1;
+        let errors = self.characters[self.cur_line][self.position].set_typed(c);
+        self.errors = errors;
         self.position += 1;
 
-        if self.position == self.lines[self.cur_line].len() {
+        // update stats
+        self.stats
+            .entry(c)
+            .and_modify(|stat| {
+                stat.ms_average = (stat.ms_average * stat.typed
+                    + self.last_action_time.elapsed().as_millis() as usize)
+                    / stat.typed;
+                stat.typed += 1;
+                stat.errors += errors;
+                stat.acc_speed = stat.ms_average as f64 / (stat.errors as f64 / stat.typed as f64);
+            })
+            .or_insert(TypingStat {
+                ms_average: self.start_time.elapsed().as_millis() as usize,
+                typed: 1,
+                errors: errors,
+                acc_speed: 0.0,
+            });
+
+        self.last_action_time = Instant::now();
+
+        if self.position == self.characters[self.cur_line].len() {
             // Switch to next line or exit if we're at the end
-            if self.cur_line == self.lines.len() - 1 {
+            if self.cur_line == self.characters.len() - 1 {
                 self.exit();
             }
+            self.add_snippet();
+
             self.position = 0;
             self.cur_line += 1;
         }
@@ -77,8 +167,6 @@ impl App {
                 self.check_character('\n');
             }
             KeyCode::Backspace => {
-                // Handle backspace, removing the last character typed
-
                 // Handle if we're at the beginning of the first line
                 if self.position == 0 && self.cur_line == 0 {
                     return Ok(());
@@ -88,9 +176,12 @@ impl App {
                     self.position -= 1;
                 } else {
                     self.cur_line -= 1;
-                    self.position = self.lines[self.cur_line].len() - 1;
+                    self.position = self.characters[self.cur_line].len() - 1;
                 }
-                self.lines[self.cur_line][self.position].reset();
+
+                self.characters[self.cur_line][self.position].reset();
+
+                self.last_action_time = Instant::now();
             }
 
             KeyCode::Esc => self.exit(),
@@ -123,84 +214,5 @@ impl App {
 
     fn exit(&mut self) {
         self.exit = true;
-    }
-}
-
-struct Colors {
-    untyped: Color,
-    correct: Color,
-    incorrect: Color,
-}
-
-impl Widget for &App {
-    fn render(self, area: Rect, buf: &mut Buffer) {
-        let outer_layout = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints(vec![
-                Constraint::Fill(1),
-                Constraint::Length(7),
-                Constraint::Length(3),
-                Constraint::Fill(1),
-            ])
-            .split(area);
-
-        let inner_layout = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints(vec![
-                Constraint::Fill(1),
-                Constraint::Length(52),
-                Constraint::Fill(1),
-            ])
-            .split(outer_layout[1]);
-        let title = Title::from(" Typirst ".bold().white());
-        let block = Block::default()
-            .title(title.alignment(Alignment::Center))
-            .borders(Borders::ALL)
-            .border_style(SLATE.c500)
-            .border_set(border::THICK);
-
-        let mut terminal_lines = vec![];
-        for line_idx in self.cur_line as isize - 2..self.cur_line as isize + 3 {
-            if line_idx < 0 || line_idx >= self.lines.len() as isize {
-                terminal_lines.push(Line::from(vec![" ".into()]));
-                continue;
-            }
-
-            let line = self.lines.get(line_idx as usize).unwrap();
-            let mut terminal_line = vec![];
-            for (idx, c) in line.iter().enumerate() {
-                let mut string = c.typed_c.to_string();
-                if c.typed_c == ' ' {
-                    string = "\u{00B7}".to_string();
-                } else if c.c == '\n' {
-                    string = "¶".to_string();
-                }
-                let mut text = Span::from(string).style(match c.state {
-                    CharState::Untouched => {
-                        Style::default().fg(self.get_colors(line_idx as usize).untyped)
-                    }
-                    CharState::Correct => {
-                        Style::default().fg(self.get_colors(line_idx as usize).correct)
-                    }
-                    CharState::Incorrect => {
-                        Style::default().fg(self.get_colors(line_idx as usize).incorrect)
-                    }
-                });
-                if line_idx as usize == self.cur_line {
-                    if self.position == idx {
-                        text = text.bold();
-                        text = text.underlined();
-                    }
-                }
-                terminal_line.push(text);
-            }
-            terminal_lines.push(Line::from(terminal_line));
-        }
-
-        let line_text = Text::from(terminal_lines);
-        Paragraph::new(line_text)
-            .centered()
-            .block(block)
-            .render(inner_layout[1], buf);
     }
 }
