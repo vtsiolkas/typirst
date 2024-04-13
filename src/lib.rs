@@ -1,16 +1,17 @@
+mod statistics;
 mod text_generator;
+mod timer;
 pub mod tui;
 mod ui;
-mod utils;
 
 use color_eyre::{eyre::WrapErr, Result};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use rand::seq::SliceRandom;
-use ratatui::style::palette::tailwind::{EMERALD, RED, SLATE};
-use ratatui::style::Color;
+use serde::{Deserialize, Serialize};
+use statistics::{load_typing_stats, save_typing_stats};
 use std::collections::HashMap;
-use std::time::Instant;
 use text_generator::{Character, TextGenerator};
+use timer::Timer;
 use ui::ui;
 
 #[derive(Debug)]
@@ -21,25 +22,24 @@ pub struct App {
     position: usize,
     typed_chars: usize,
     errors: usize,
+    pause: bool,
     exit: bool,
-    start_time: Instant,
-    last_action_time: Instant,
+    timer: Timer,
     text_generator: TextGenerator,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 struct TypingStat {
-    ms_average: usize,
-    typed: usize,
-    errors: usize,
-    acc_speed: f64, // Typing speed divided by accuracy, large is worse
+    ms_average: Option<usize>,
+    typed: Option<usize>,
+    errors: Option<usize>,
+    acc_speed: Option<f64>, // Typing speed divided by accuracy, large is worse
 }
 impl PartialEq for TypingStat {
     fn eq(&self, other: &Self) -> bool {
         self.acc_speed == other.acc_speed
     }
 }
-
 impl Eq for TypingStat {}
 impl Ord for TypingStat {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
@@ -52,12 +52,6 @@ impl PartialOrd for TypingStat {
     }
 }
 
-struct Colors {
-    untyped: Color,
-    correct: Color,
-    incorrect: Color,
-}
-
 impl App {
     pub fn new() -> Self {
         Self {
@@ -67,9 +61,9 @@ impl App {
             position: 0,
             typed_chars: 0,
             errors: 0,
+            pause: false,
             exit: false,
-            start_time: Instant::now(),
-            last_action_time: Instant::now(),
+            timer: Timer::new(),
             text_generator: TextGenerator::new(),
         }
     }
@@ -81,14 +75,17 @@ impl App {
             .wrap_err("Loading snippets failed.")?;
         self.text_generator.calculate_character_weights();
 
+        self.stats = load_typing_stats().unwrap_or_else(|_| HashMap::new());
+
         // Generate some initial snippets
         self.add_snippet();
 
-        self.start_time = std::time::Instant::now();
         while !self.exit {
             terminal.draw(|frame| ui(frame, &self))?;
             self.handle_events().wrap_err("handle events failed")?;
         }
+
+        save_typing_stats(&self.stats).unwrap();
         Ok(())
     }
 
@@ -116,11 +113,14 @@ impl App {
 
         let mut characters = self
             .text_generator
-            .generate_characters(*random_worst_char, 40);
+            .generate_characters(*random_worst_char, 50);
         self.characters.append(&mut characters);
     }
 
     fn check_character(&mut self, c: char) {
+        if !self.timer.running {
+            self.timer.start();
+        }
         self.typed_chars += 1;
         let errors = self.characters[self.cur_line][self.position].set_typed(c);
         self.errors = errors;
@@ -130,27 +130,33 @@ impl App {
         self.stats
             .entry(c)
             .and_modify(|stat| {
-                stat.ms_average = (stat.ms_average * stat.typed
-                    + self.last_action_time.elapsed().as_millis() as usize)
-                    / stat.typed;
-                stat.typed += 1;
-                stat.errors += errors;
-                stat.acc_speed = stat.ms_average as f64 / (stat.errors as f64 / stat.typed as f64);
+                stat.ms_average = Some(
+                    (stat.ms_average.unwrap() * stat.typed.unwrap()
+                        + self.timer.elapsed_last_action().as_millis() as usize)
+                        / stat.typed.unwrap(),
+                );
+                stat.typed = Some(stat.typed.unwrap() + 1);
+                stat.errors = Some(stat.errors.unwrap() + errors);
+                let mut acc = stat.typed.unwrap() as f64
+                    - stat.errors.unwrap() as f64 / stat.typed.unwrap() as f64;
+                if acc == 0.0 {
+                    acc = 1.0;
+                }
+                stat.acc_speed = Some(stat.ms_average.unwrap() as f64 / acc);
             })
             .or_insert(TypingStat {
-                ms_average: self.start_time.elapsed().as_millis() as usize,
-                typed: 1,
-                errors: errors,
-                acc_speed: 0.0,
+                ms_average: Some(self.timer.elapsed_last_action().as_millis() as usize),
+                typed: Some(1),
+                errors: Some(errors),
+                acc_speed: Some(
+                    (self.timer.elapsed_last_action().as_millis()
+                        * (if errors > 0 { errors as u128 } else { 1 })) as f64,
+                ),
             });
 
-        self.last_action_time = Instant::now();
+        self.timer.reset_last_action();
 
         if self.position == self.characters[self.cur_line].len() {
-            // Switch to next line or exit if we're at the end
-            if self.cur_line == self.characters.len() - 1 {
-                self.exit();
-            }
             self.add_snippet();
 
             self.position = 0;
@@ -159,57 +165,60 @@ impl App {
     }
 
     fn handle_key_event(&mut self, key_event: KeyEvent) -> Result<()> {
-        match key_event.code {
-            KeyCode::Char(c) => {
-                self.check_character(c);
+        if self.pause {
+            match key_event.code {
+                KeyCode::Enter => self.unpause(),
+                KeyCode::Char('q') => self.exit(),
+                KeyCode::Char('r') => {
+                    self.characters = vec![];
+                    self.cur_line = 0;
+                    self.position = 0;
+                    self.add_snippet();
+                }
+                _ => {}
             }
-            KeyCode::Enter => {
-                self.check_character('\n');
-            }
-            KeyCode::Backspace => {
-                // Handle if we're at the beginning of the first line
-                if self.position == 0 && self.cur_line == 0 {
-                    return Ok(());
+            return Ok(());
+        } else {
+            match key_event.code {
+                KeyCode::Char(c) => {
+                    self.check_character(c);
+                }
+                KeyCode::Enter => {
+                    self.check_character('\n');
+                }
+                KeyCode::Backspace => {
+                    // Handle if we're at the beginning of the first line
+                    if self.position == 0 && self.cur_line == 0 {
+                        return Ok(());
+                    }
+
+                    if self.position > 0 {
+                        self.position -= 1;
+                    } else {
+                        self.cur_line -= 1;
+                        self.position = self.characters[self.cur_line].len() - 1;
+                    }
+
+                    self.characters[self.cur_line][self.position].reset();
+
+                    self.timer.reset_last_action();
                 }
 
-                if self.position > 0 {
-                    self.position -= 1;
-                } else {
-                    self.cur_line -= 1;
-                    self.position = self.characters[self.cur_line].len() - 1;
-                }
-
-                self.characters[self.cur_line][self.position].reset();
-
-                self.last_action_time = Instant::now();
+                KeyCode::Esc => self.pause(),
+                _ => {}
             }
-
-            KeyCode::Esc => self.exit(),
-            _ => {}
         }
         Ok(())
     }
 
-    fn get_colors(&self, line_idx: usize) -> Colors {
-        if line_idx == self.cur_line {
-            Colors {
-                untyped: SLATE.c50,
-                correct: EMERALD.c400,
-                incorrect: RED.c400,
-            }
-        } else if (line_idx as isize - self.cur_line as isize).abs() <= 1 {
-            Colors {
-                untyped: SLATE.c400,
-                correct: EMERALD.c700,
-                incorrect: RED.c800,
-            }
-        } else {
-            Colors {
-                untyped: SLATE.c500,
-                correct: EMERALD.c800,
-                incorrect: RED.c900,
-            }
-        }
+    fn pause(&mut self) {
+        self.pause = true;
+        self.timer.pause();
+    }
+
+    fn unpause(&mut self) {
+        self.pause = false;
+        self.timer.start();
     }
 
     fn exit(&mut self) {

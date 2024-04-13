@@ -1,199 +1,66 @@
-He was the only member of the club who didn't like plum pudding.
+Michael Jeffrey Jordan (born February 17, 1963), also known by his initials MJ, is an American businessman and former professional basketball player. He played fifteen seasons in the National Basketball Association (NBA) between 1984 and 2003, winning six NBA championships with the Chicago Bulls.
 #!#!#!#!#!
-I'm not a party animal, but I do like animal parties.
+Albert Einstein (14 March 1879 - 18 April 1955) was a German-born theoretical physicist who is widely held to be one of the greatest and most influential scientists of all time. Best known for developing the theory of relativity, Einstein also made important contributions to quantum mechanics, and was thus a central figure in the revolutionary reshaping of the scientific understanding of nature that modern physics accomplished in the first decades of the twentieth century.
 #!#!#!#!#!
-Smoky the Bear secretly started the fires.
+Sir Isaac Newton FRS (25 December 1642 - 20 March 1726/27) was an English polymath active as a mathematician, physicist, astronomer, alchemist, theologian, and author who was described in his time as a natural philosopher. He was a key figure in the Scientific Revolution and the Enlightenment that followed.
 #!#!#!#!#!
-She always had an interesting perspective on why the world must be flat.
+Kurt Vonnegut (November 11, 1922 - April 11, 2007) was an American writer and humorist known for his satirical and darkly humorous novels. He published 14 novels, three short-story collections, five plays, and five nonfiction works over fifty-plus years; further collections have been published since his death.
 #!#!#!#!#!
-She advised him to come back at once.
+Cornell University is a private Ivy League land-grant research university based in Ithaca, New York. The university was founded in 1865 by Ezra Cornell and Andrew Dickson White. Since its founding, Cornell has been a co-educational and nonsectarian institution. As of fall 2023, the student body included over 16,000 undergraduate and 10,000 graduate students from all 50 U.S. states and 130 countries.
 #!#!#!#!#!
-No matter how beautiful the sunset, it saddened her knowing she was one day older.
+New York, sometimes called New York State, is a state in the Northeastern and Mid-Atlantic regions of the United States. It borders New Jersey and Pennsylvania to its south, New England and the Canadian provinces of Ontario and Quebec to its north, and the Atlantic Ocean to its east.
 #!#!#!#!#!
-You have every right to be angry, but that doesn't give you the right to be mean.
+The United Nations (UN) is a diplomatic and political international organization whose stated purposes are to maintain international peace and security, develop friendly relations among nations, achieve international cooperation, and serve as a centre for harmonizing the actions of nations.[3] It is the world's largest international organization.
 #!#!#!#!#!
-Today we gathered moss for my uncle's wedding.
+World War II or the Second World War was a global conflict that lasted from 1939 to 1945. The vast majority of the world's countries, including all the great powers, fought as part of two opposing military alliances: the Allies and the Axis. Many participating countries invested all available economic, industrial, and scientific capabilities into this total war, blurring the distinction between civilian and military resources.
 #!#!#!#!#!
-Courage and stupidity were all he had.
+The Empire of Japan, also referred to as the Japanese Empire, Imperial Japan, or simply Japan, was the Japanese nation-state that existed from the Meiji Restoration in 1868 until the enactment of the reformed Constitution of Japan in 1947. From 29 August 1910 until 2 September 1945, it administered the naichi (the Japanese archipelago and post-1943 Karafuto) and the gaichi.
 #!#!#!#!#!
-She traveled because it cost the same as therapy and was a lot more enjoyable.
+The United States of America (USA), commonly known as the United States (U.S. or US), or America, is a country primarily located in North America. It consists of 50 states, a federal district, five major unincorporated territories, 326 Indian reservations, and some minor possessions. At 3.8 million square miles (9.8 million square kilometers), it is the world's third- or fourth-largest country by total area.
 #!#!#!#!#!
-There is no better feeling than staring at a wall with closed eyes.
+The United States dollar (symbol: $; code: USD; also abbreviated US$ to distinguish it from other dollar-denominated currencies; referred to as the dollar, U.S. dollar, or American dollar) is the official currency of the United States and its territories per the Coinage Act of 1792. One dollar is divided into 100 cents or 1000 mills for accounting purposes.
 #!#!#!#!#!
-She was the type of girl that always burnt sugar to show she cared.
+The United States Armed Forces are the military forces of the United States of America. The armed forces consists of six service branches: the Army, Marine Corps, Navy, Air Force, Space Force, and Coast Guard. The president of the United States is the commander-in-chief of the armed forces and forms military policy with the Department of Defense (DoD) and Department of Homeland Security (DHS), both federal executive departments, acting as the principal organs by which military policy is carried out.
 #!#!#!#!#!
-The family’s excitement over going to Disneyland was crazier than she anticipated.
+The United States Constitution is the supreme law of the United States of America. The Constitution, originally comprising seven articles, delineates the national frame of government. Its first three articles embody the doctrine of the separation of powers, whereby the federal government is divided into three branches: the legislative, consisting of the bicameral Congress (Article One); the executive, consisting of the president and subordinate officers (Article Two); and the judicial, consisting of the Supreme Court and other federal courts (Article Three).
 #!#!#!#!#!
-The bug was having an excellent day until he hit the windshield.
+The United States Congress is the bicameral legislature of the federal government of the United States and consists of two chambers: the House of Representatives and the Senate. The Congress meets in the United States Capitol in Washington, D.C. Both senators and representatives are chosen through direct election, though vacancies in the Senate may be filled by a governor's appointment.
 #!#!#!#!#!
-Poison ivy grew through the fence they said was impenetrable.
+Programming is the process of creating a set of instructions that tell a computer how to perform a task. Programming can be done using a variety of computer languages, such as Python, Java, C++, and many others. Programmers use these languages to create software, websites, and other applications that help people work more efficiently and effectively.
 #!#!#!#!#!
-The secret code they created made no sense, even to them.
+Python is a high-level, interpreted programming language that is known for its simplicity and readability. It is widely used in web development, data analysis, artificial intelligence, and scientific computing. Python is also popular among beginners because of its easy-to-understand syntax and extensive libraries.
 #!#!#!#!#!
-The paintbrush was angry at the color the artist chose to use.
+Java is a high-level, class-based, object-oriented programming language that is designed to have as few implementation dependencies as possible. It is widely used for developing mobile applications, web applications, and large-scale enterprise applications. Java is known for its portability, security, and performance.
 #!#!#!#!#!
-It's never been my responsibility to glaze the donuts.
+C++ is a general-purpose programming language that was developed as an extension of the C programming language. It is widely used for developing system software, application software, device drivers, embedded software, and games. C++ is known for its efficiency, flexibility, and performance.
 #!#!#!#!#!
-The swirled lollipop had issues with the pop rock candy.
+HTML (Hypertext Markup Language) is the standard markup language used to create and design web pages. It provides the structure and layout of a webpage by using a system of tags and attributes. HTML is essential for creating websites and web applications that can be viewed on the internet.
 #!#!#!#!#!
-When he had to picnic on the beach, he purposely put sand in other people’s food.
+CSS (Cascading Style Sheets) is a style sheet language used to describe the presentation of a document written in HTML. It controls the layout, colors, fonts, and other design elements of a webpage. CSS is essential for creating visually appealing and user-friendly websites.
 #!#!#!#!#!
-He strives to keep the best lawn in the neighborhood.
+JavaScript is a high-level, interpreted programming language that is used to create interactive effects within web browsers. It is commonly used for creating dynamic content, animations, and interactive features on websites. JavaScript is essential for building modern web applications and user interfaces.
 #!#!#!#!#!
-I cheated while playing the darts tournament by using a longbow.
+Artificial intelligence (AI) is the simulation of human intelligence processes by machines, especially computer systems. These processes include learning, reasoning, problem-solving, perception, and language understanding. AI technologies are used in a wide range of applications, from self-driving cars to virtual assistants.
 #!#!#!#!#!
-The hummingbird's wings blurred while it eagerly sipped the sugar water from the feeder.
+Machine learning is a subset of artificial intelligence that focuses on developing algorithms and statistical models that allow computers to learn and make decisions without being explicitly programmed. Machine learning algorithms are used in a variety of applications, such as image recognition, natural language processing, and predictive analytics.
 #!#!#!#!#!
-Dolores wouldn't have eaten the meal if she had known what it actually was.
+Data science is an interdisciplinary field that uses scientific methods, processes, algorithms, and systems to extract knowledge and insights from structured and unstructured data. It combines techniques from statistics, computer science, and domain-specific fields to analyze and interpret complex data sets. Data science is used in a wide range of applications, from business analytics to healthcare.
 #!#!#!#!#!
-I think I will buy the red car, or I will lease the blue one.
+Big data is a term that refers to extremely large and complex data sets that cannot be easily processed using traditional data processing applications. Big data is characterized by its volume, velocity, variety, and veracity. It is used in a wide range of applications, such as predictive analytics, machine learning, and data mining.
 #!#!#!#!#!
-I purchased a baby clown from the Russian terrorist black market.
+Cybersecurity is the practice of protecting computer systems, networks, and data from digital attacks, theft, and damage. Cybersecurity measures are used to prevent unauthorized access to sensitive information and protect against cyber threats, such as malware, ransomware, and phishing attacks. Cybersecurity is essential for ensuring the confidentiality, integrity, and availability of digital assets.
 #!#!#!#!#!
-Cursive writing is the best way to build a race track.
+Cloud computing is the delivery of computing services, including servers, storage, databases, networking, software, analytics, and intelligence, over the internet to offer faster innovation, flexible resources, and economies of scale. Cloud computing allows individuals and organizations to access and use computing resources as needed without having to invest in costly infrastructure.
 #!#!#!#!#!
-His ultimate dream fantasy consisted of being content and sleeping eight hours in a row.
+Blockchain is a decentralized, distributed digital ledger that records transactions across multiple computers in such a way that the registered transactions cannot be altered retroactively. This technology enables the creation of secure, transparent, and tamper-proof digital records that can be used for various applications, such as cryptocurrency, smart contracts, and supply chain management.
 #!#!#!#!#!
-The chic gangster liked to start the day with a pink scarf.
+Internet of Things (IoT) is a network of interconnected devices that can communicate and exchange data with each other over the internet. These devices, which include sensors, actuators, and other hardware, can collect and transmit data on various aspects of the physical world. IoT technology is used in a wide range of applications, such as smart homes, healthcare, and industrial automation.
 #!#!#!#!#!
-The anaconda was the greatest criminal mastermind in this part of the neighborhood.
+Virtual reality (VR) is a simulated experience that can be similar to or completely different from the real world. VR technology uses headsets or multi-projected environments to create realistic images, sounds, and other sensations that simulate a user's physical presence in a virtual or imaginary environment. VR is used in entertainment, education, training, and various other fields.
 #!#!#!#!#!
-Pantyhose and heels are an interesting choice of attire for the beach.
+Augmented reality (AR) is an interactive experience of a real-world environment where the objects that reside in the real world are enhanced by computer-generated perceptual information. AR technology overlays digital information, such as images, videos, or 3D models, onto the user's view of the physical world. AR is used in applications like gaming, navigation, and industrial design.
 #!#!#!#!#!
-Nancy was proud that she ran a tight shipwreck.
+Quantum computing is a type of computing that uses quantum-mechanical phenomena, such as superposition and entanglement, to perform operations on data. Quantum computers are capable of processing and analyzing complex data sets more efficiently than classical computers. Quantum computing has the potential to revolutionize fields like cryptography, optimization, and material science.
 #!#!#!#!#!
-Mom didn’t understand why no one else wanted a hot tub full of jello.
-#!#!#!#!#!
-Her hair was windswept as she rode in the black convertible.
-#!#!#!#!#!
-He watched the dancing piglets with panda bear tummies in the swimming pool.
-#!#!#!#!#!
-All they could see was the blue water surrounding their sailboat.
-#!#!#!#!#!
-He was the type of guy who liked Christmas lights on his house in the middle of July.
-#!#!#!#!#!
-Never underestimate the willingness of the greedy to throw you under the bus.
-#!#!#!#!#!
-Today I heard something new and unmemorable.
-#!#!#!#!#!
-The door swung open to reveal pink giraffes and red elephants.
-#!#!#!#!#!
-He wondered if she would appreciate his toenail collection.
-#!#!#!#!#!
-He was disappointed when he found the beach to be so sandy and the sun so sunny.
-#!#!#!#!#!
-They improved dramatically once the lead singer left.
-#!#!#!#!#!
-When confronted with a rotary dial phone the teenager was perplexed.
-#!#!#!#!#!
-Erin accidentally created a new universe.
-#!#!#!#!#!
-Hang on, my kittens are scratching at the bathtub and they'll upset by the lack of biscuits.
-#!#!#!#!#!
-The crowd yells and screams for more memes.
-#!#!#!#!#!
-You realize you're not alone as you sit in your bedroom massaging your calves after a long day of playing tug-of-war with Grandpa Joe in the hospital.
-#!#!#!#!#!
-The thunderous roar of the jet overhead confirmed her worst fears.
-#!#!#!#!#!
-He looked behind the door and didn't like what he saw.
-#!#!#!#!#!
-The llama couldn't resist trying the lemonade.
-#!#!#!#!#!
-He invested some skill points in Charisma and Strength.
-#!#!#!#!#!
-It was a slippery slope and he was willing to slide all the way to the deepest depths.
-#!#!#!#!#!
-In that instant, everything changed.
-#!#!#!#!#!
-She couldn't decide of the glass was half empty or half full so she drank it.
-#!#!#!#!#!
-She was too busy always talking about what she wanted to do to actually do any of it.
-#!#!#!#!#!
-Today I dressed my unicorn in preparation for the race.
-#!#!#!#!#!
-Bill ran from the giraffe toward the dolphin.
-#!#!#!#!#!
-I liked their first two albums but changed my mind after that charity gig.
-#!#!#!#!#!
-A dead duck doesn't fly backward.
-#!#!#!#!#!
-He swore he just saw his sushi move.
-#!#!#!#!#!
-The random sentence generator generated a random sentence about a random sentence.
-#!#!#!#!#!
-It didn't make sense unless you had the power to eat colors.
-#!#!#!#!#!
-He embraced his new life as an eggplant.
-#!#!#!#!#!
-I've never seen a more beautiful brandy glass filled with wine.
-#!#!#!#!#!
-The sunblock was handed to the girl before practice, but the burned skin was proof she did not apply it.
-#!#!#!#!#!
-Please put on these earmuffs because I can't you hear.
-#!#!#!#!#!
-I'd always thought lightning was something only I could see.
-#!#!#!#!#!
-I had a friend in high school named Rick Shaw, but he was fairly useless as a mode of transport.
-#!#!#!#!#!
-Two seats were vacant.
-#!#!#!#!#!
-Lucifer was surprised at the amount of life at Death Valley.
-#!#!#!#!#!
-I made myself a peanut butter sandwich as I didn't want to subsist on veggie crackers.
-#!#!#!#!#!
-Douglas figured the best way to succeed was to do the opposite of what he'd been doing all his life.
-#!#!#!#!#!
-For the 216th time, he said he would quit drinking soda after this last Coke.
-#!#!#!#!#!
-Weather is not trivial - it's especially important when you're standing in it.
-#!#!#!#!#!
-Martha came to the conclusion that shake weights are a great gift for any occasion.
-#!#!#!#!#!
-The tree fell unexpectedly short.
-#!#!#!#!#!
-Each person who knows you has a different perception of who you are.
-#!#!#!#!#!
-The near-death experience brought new ideas to light.
-#!#!#!#!#!
-Too many prisons have become early coffins.
-#!#!#!#!#!
-He had concluded that pigs must be able to fly in Hog Heaven.
-#!#!#!#!#!
-I really want to go to work, but I am too sick to drive.
-#!#!#!#!#!
-There's a growing trend among teenagers of using frisbees as go-cart wheels.
-#!#!#!#!#!
-He uses onomatopoeia as a weapon of mental destruction.
-#!#!#!#!#!
-He fumbled in the darkness looking for the light switch, but when he finally found it there was someone already there.
-#!#!#!#!#!
-She discovered van life is difficult with 2 cats and a dog.
-#!#!#!#!#!
-Please tell me you don't work in a morgue.
-#!#!#!#!#!
-She was only made the society president because she can whistle with her toes.
-#!#!#!#!#!
-Sometimes, all you need to do is completely make an ass of yourself and laugh it off to realise that life isn’t so bad after all.
-#!#!#!#!#!
-There's a message for you if you look up.
-#!#!#!#!#!
-Acres of almond trees lined the interstate highway which complimented the crazy driving nuts.
-#!#!#!#!#!
-When transplanting seedlings, candied teapots will make the task easier.
-#!#!#!#!#!
-Your girlfriend bought your favorite cookie crisp cereal but forgot to get milk.
-#!#!#!#!#!
-He stomped on his fruit loops and thus became a cereal killer.
-#!#!#!#!#!
-I was starting to worry that my pet turtle could tell what I was thinking.
-#!#!#!#!#!
-If I don’t like something, I’ll stay away from it.
-#!#!#!#!#!
-Grape jelly was leaking out the hole in the roof.
-#!#!#!#!#!
-Abstraction is often one floor above you.
-#!#!#!#!#!
-The light in his life was actually a fire burning all around him.
-#!#!#!#!#!
-The golden retriever loved the fireworks each Fourth of July.
+5G is the fifth generation of wireless technology for digital cellular networks. It provides faster data speeds, lower latency, and increased capacity compared to previous generations of mobile networks. 5G technology enables new applications, such as the Internet of Things (IoT), augmented reality (AR), and autonomous vehicles, that require high-speed and reliable wireless connectivity.
+
