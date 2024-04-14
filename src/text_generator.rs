@@ -1,4 +1,6 @@
+use crate::options;
 use color_eyre::Result;
+use options::TextDifficulty;
 use rand::seq::SliceRandom;
 use std::collections::HashMap;
 
@@ -48,13 +50,15 @@ impl Character {
 pub struct TextGenerator {
     snippets: Vec<String>,
     character_weights: HashMap<String, HashMap<usize, usize>>,
+    difficulty: TextDifficulty,
 }
 
 impl TextGenerator {
-    pub fn new() -> Self {
+    pub fn new(difficulty: TextDifficulty) -> Self {
         Self {
             snippets: vec![],
             character_weights: HashMap::new(),
+            difficulty,
         }
     }
 
@@ -107,6 +111,44 @@ impl TextGenerator {
     }
 
     fn split_string(&self, input: &str, max_len: usize) -> Vec<Vec<Character>> {
+        let input = match self.difficulty {
+            TextDifficulty::Lowercase => input
+                .chars()
+                .map(|c| {
+                    if c.is_alphabetic() || c.is_whitespace() {
+                        c
+                    } else {
+                        ' '
+                    }
+                })
+                .collect::<String>()
+                .to_lowercase(),
+            TextDifficulty::Numbers => input
+                .chars()
+                .map(|c| {
+                    if c.is_alphanumeric() || c.is_whitespace() {
+                        c
+                    } else {
+                        ' '
+                    }
+                })
+                .collect::<String>()
+                .to_lowercase(),
+            TextDifficulty::Uppercase => input
+                .chars()
+                .map(|c| {
+                    if c.is_alphanumeric() || c.is_whitespace() {
+                        c
+                    } else {
+                        ' '
+                    }
+                })
+                .collect::<String>(),
+            TextDifficulty::Symbols => String::from(input),
+        };
+
+        let input = input.split_whitespace().collect::<Vec<&str>>().join(" ");
+
         let mut result = Vec::new();
         let mut start = 0;
         let mut last_space = 0;
@@ -142,7 +184,7 @@ impl TextGenerator {
                 start = if split_at == last_space {
                     split_at + 1
                 } else {
-                    split_at // + (if c == '\n' { 1 } else { 0 })
+                    split_at //+ (if c == '\n' { 1 } else { 0 })
                 };
 
                 // Reset len and last_space for the next slice

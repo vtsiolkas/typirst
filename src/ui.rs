@@ -1,4 +1,6 @@
+use crate::options::{CyclicOption, Highlight, Labeled};
 use crate::text_generator::CharState;
+use crate::utils::get_nth_word_boundaries;
 use crate::App;
 use ratatui::style::palette::tailwind::{EMERALD, RED, SLATE};
 use ratatui::{
@@ -59,9 +61,97 @@ pub fn ui(f: &mut Frame, app: &App) {
 
     f.render_widget(title_text, vertical_layout[0]);
 
+    render_typing_area(f, vertical_layout[2], app);
+    render_stats_area(f, vertical_layout[4], app);
+    render_message_area(f, vertical_layout[5], app);
     /////////////////////////////////
-    // Typing area block
+    // Menu block
     /////////////////////////////////
+    if app.pause {
+        let menu_block = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints(vec![
+                Constraint::Fill(1),
+                Constraint::Length(18),
+                Constraint::Length(18),
+                Constraint::Length(18),
+                Constraint::Length(18),
+                Constraint::Length(18),
+                Constraint::Fill(1),
+            ])
+            .split(vertical_layout[6]);
+
+        render_options_block(f, menu_block[1], app.difficulty.clone());
+        render_options_block(f, menu_block[2], app.highlight.clone());
+
+        let block = Block::default();
+        let menu_text = Paragraph::new(vec![
+            Line::from(vec![]),
+            Line::from(vec![]),
+            Line::from(vec![
+                Span::from("(q)").style(Style::default().bg(SLATE.c700)),
+                Span::from(" quit"),
+            ]),
+        ])
+        .block(block);
+
+        f.render_widget(menu_text, menu_block[3]);
+
+        let block = Block::default();
+        let menu_text = Paragraph::new(vec![
+            Line::from(vec![]),
+            Line::from(vec![]),
+            Line::from(vec![
+                Span::from("(q)").style(Style::default().bg(SLATE.c700)),
+                Span::from(" quit"),
+            ]),
+        ])
+        .block(block);
+
+        f.render_widget(menu_text, menu_block[4]);
+
+        let block = Block::default();
+        let menu_text = Paragraph::new(vec![
+            Line::from(vec![]),
+            Line::from(vec![]),
+            Line::from(vec![
+                Span::from("(r)").style(Style::default().bg(SLATE.c700)),
+                Span::from(" restart"),
+            ]),
+        ])
+        .block(block);
+
+        f.render_widget(menu_text, menu_block[5]);
+    }
+}
+
+fn render_options_block<T: Labeled>(
+    f: &mut Frame,
+    layout: Rect,
+    option_container: CyclicOption<T>,
+) {
+    let mut difficulty_options = vec![];
+    let options = option_container.surrounding();
+    difficulty_options.push(
+        Line::from(format!("    {}", options.0.label())).style(Style::default().fg(SLATE.c500)),
+    );
+    difficulty_options.push(
+        Line::from(format!(
+            "({}) {}",
+            option_container.keybinding,
+            options.1.label()
+        ))
+        .style(Style::default().fg(SLATE.c300)),
+    );
+    difficulty_options.push(
+        Line::from(format!("    {}", options.2.label())).style(Style::default().fg(SLATE.c500)),
+    );
+
+    let menu_text = Paragraph::new(difficulty_options);
+    f.render_widget(menu_text, layout);
+}
+
+fn render_typing_area(f: &mut Frame, layout: Rect, app: &App) {
     let typing_area = Layout::default()
         .direction(Direction::Horizontal)
         .constraints(vec![
@@ -69,7 +159,7 @@ pub fn ui(f: &mut Frame, app: &App) {
             Constraint::Length(WIDTH),
             Constraint::Fill(1),
         ])
-        .split(vertical_layout[2]);
+        .split(layout);
 
     let mut typing_lines = vec![];
 
@@ -99,10 +189,38 @@ pub fn ui(f: &mut Frame, app: &App) {
                     Style::default().fg(get_colors(app.cur_line, line_idx as usize, c.c).incorrect)
                 }
             });
-            if line_idx as usize == app.cur_line {
-                if app.position == idx {
-                    text = text.white().underlined().bold();
+            match app.highlight.current() {
+                Highlight::Character => {
+                    if line_idx == app.cur_line as isize && app.position == idx {
+                        text = text.white().underlined().bold();
+                    }
                 }
+                Highlight::Word => {
+                    let (word_start, word_end, _) = get_nth_word_boundaries(app, 0);
+                    if line_idx == app.cur_line as isize && idx >= word_start && idx < word_end {
+                        println!("{} {}", idx, word_end);
+                        text = text.yellow().underlined().bold();
+                    }
+                }
+                Highlight::NextWord => {
+                    let (word_start, word_end, line_offset) = get_nth_word_boundaries(app, 1);
+                    if line_offset as isize == line_idx - app.cur_line as isize
+                        && idx >= word_start
+                        && idx < word_end
+                    {
+                        text = text.underlined().bold();
+                    }
+                }
+                Highlight::TwoWords => {
+                    let (word_start, word_end, line_offset) = get_nth_word_boundaries(app, 2);
+                    if line_offset as isize == line_idx - app.cur_line as isize
+                        && idx >= word_start
+                        && idx < word_end
+                    {
+                        text = text.underlined().bold();
+                    }
+                }
+                _ => {}
             }
             terminal_line.push(text);
         }
@@ -113,9 +231,15 @@ pub fn ui(f: &mut Frame, app: &App) {
 
     f.render_widget(typing_text, typing_area[1]);
 
-    /////////////////////////////////
-    // Stats block
-    /////////////////////////////////
+    f.set_cursor(
+        typing_area[1].x
+            + ((WIDTH as f32 - app.characters[app.cur_line].len() as f32) / 2.0).ceil() as u16
+            + app.position as u16,
+        typing_area[1].y + 2,
+    );
+}
+
+fn render_stats_area(f: &mut Frame, layout: Rect, app: &App) {
     let stats_layout = Layout::default()
         .direction(Direction::Horizontal)
         .constraints(vec![
@@ -124,7 +248,7 @@ pub fn ui(f: &mut Frame, app: &App) {
             Constraint::Length(WIDTH / 2),
             Constraint::Fill(1),
         ])
-        .split(vertical_layout[4]);
+        .split(layout);
 
     let title = Title::from(" WPM ".white());
     let block = Block::default()
@@ -175,16 +299,15 @@ pub fn ui(f: &mut Frame, app: &App) {
         .centered()
         .block(block);
     f.render_widget(accuracy_text, stats_layout[2]);
+}
 
-    /////////////////////////////////
-    // Pause block
-    /////////////////////////////////
+fn render_message_area(f: &mut Frame, layout: Rect, app: &App) {
     let block = Block::default();
-    let pause_text = Paragraph::new(if app.pause {
+    let message = Paragraph::new(if app.pause {
         vec![
             Line::from(vec![]),
             Line::from(vec![Span::from("PAUSED").bold()]),
-            Line::from(vec![Span::from("Press Enter to resume")]),
+            Line::from(vec![Span::from("Press Esc to resume")]),
         ]
     } else {
         vec![
@@ -198,96 +321,5 @@ pub fn ui(f: &mut Frame, app: &App) {
     .centered()
     .block(block);
 
-    f.render_widget(pause_text, vertical_layout[5]);
-
-    /////////////////////////////////
-    // Menu block
-    /////////////////////////////////
-    if app.pause {
-        let menu_block = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints(vec![
-                Constraint::Fill(1),
-                Constraint::Length(18),
-                Constraint::Length(18),
-                Constraint::Length(18),
-                Constraint::Length(18),
-                Constraint::Length(18),
-                Constraint::Fill(1),
-            ])
-            .split(vertical_layout[6]);
-
-        let block = Block::default();
-        let menu_text = Paragraph::new(vec![
-            Line::from(vec![
-                Span::from("    lowercase").style(Style::default().fg(SLATE.c500))
-            ]),
-            Line::from(vec![
-                Span::from("(C)").style(Style::default().bg(SLATE.c500)),
-                Span::from(" uppercase"),
-            ]),
-            Line::from(vec![
-                Span::from("    symbols").style(Style::default().fg(SLATE.c500))
-            ]),
-        ])
-        .block(block);
-
-        f.render_widget(menu_text, menu_block[1]);
-        let block = Block::default();
-        let menu_text = Paragraph::new(vec![
-            Line::from(vec![]),
-            Line::from(vec![]),
-            Line::from(vec![
-                Span::from("(q)").style(Style::default().bg(SLATE.c700)),
-                Span::from(" quit"),
-            ]),
-        ])
-        .block(block);
-
-        f.render_widget(menu_text, menu_block[2]);
-        let block = Block::default();
-        let menu_text = Paragraph::new(vec![
-            Line::from(vec![]),
-            Line::from(vec![]),
-            Line::from(vec![
-                Span::from("(q)").style(Style::default().bg(SLATE.c700)),
-                Span::from(" quit"),
-            ]),
-        ])
-        .block(block);
-
-        f.render_widget(menu_text, menu_block[3]);
-        let block = Block::default();
-        let menu_text = Paragraph::new(vec![
-            Line::from(vec![]),
-            Line::from(vec![]),
-            Line::from(vec![
-                Span::from("(q)").style(Style::default().bg(SLATE.c700)),
-                Span::from(" quit"),
-            ]),
-        ])
-        .block(block);
-
-        f.render_widget(menu_text, menu_block[4]);
-
-        let block = Block::default();
-        let menu_text = Paragraph::new(vec![
-            Line::from(vec![]),
-            Line::from(vec![]),
-            Line::from(vec![
-                Span::from("(r)").style(Style::default().bg(SLATE.c700)),
-                Span::from(" restart"),
-            ]),
-        ])
-        .block(block);
-
-        f.render_widget(menu_text, menu_block[5]);
-    }
-
-    f.set_cursor(
-        typing_area[1].x
-            + ((WIDTH as f32 - app.characters[app.cur_line].len() as f32) / 2.0).ceil() as u16
-            + app.position as u16,
-        typing_area[1].y + 2,
-    );
+    f.render_widget(message, layout);
 }

@@ -1,11 +1,14 @@
+mod options;
 mod statistics;
 mod text_generator;
 mod timer;
 pub mod tui;
 mod ui;
+mod utils;
 
-use color_eyre::{eyre::WrapErr, owo_colors::OwoColorize, Result};
+use color_eyre::{eyre::WrapErr, Result};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
+use options::{CyclicOption, Highlight, TextDifficulty};
 use rand::seq::SliceRandom;
 use serde::{Deserialize, Serialize};
 use statistics::{load_typing_stats, save_typing_stats};
@@ -23,9 +26,11 @@ pub struct App {
     typed_chars: usize,
     errors: usize,
     pause: bool,
-    exit: bool,
+    quit: bool,
     timer: Timer,
     text_generator: TextGenerator,
+    difficulty: CyclicOption<TextDifficulty>,
+    highlight: CyclicOption<Highlight>,
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
@@ -62,9 +67,28 @@ impl App {
             typed_chars: 0,
             errors: 0,
             pause: false,
-            exit: false,
+            quit: false,
             timer: Timer::new(),
-            text_generator: TextGenerator::new(),
+            difficulty: CyclicOption::new(
+                vec![
+                    TextDifficulty::Lowercase,
+                    TextDifficulty::Numbers,
+                    TextDifficulty::Uppercase,
+                    TextDifficulty::Symbols,
+                ],
+                'c',
+            ),
+            highlight: CyclicOption::new(
+                vec![
+                    Highlight::Nothing,
+                    Highlight::Character,
+                    Highlight::Word,
+                    Highlight::NextWord,
+                    Highlight::TwoWords,
+                ],
+                'h',
+            ),
+            text_generator: TextGenerator::new(TextDifficulty::Lowercase),
         }
     }
 
@@ -80,9 +104,7 @@ impl App {
         // Generate some initial snippets
         self.add_snippet();
 
-        // terminal.style(crossterm::cursor::SetCursorStyle::SteadyBar);
-
-        while !self.exit {
+        while !self.quit {
             terminal.draw(|frame| ui(frame, &self))?;
             self.handle_events().wrap_err("handle events failed")?;
         }
@@ -169,13 +191,15 @@ impl App {
     fn handle_key_event(&mut self, key_event: KeyEvent) -> Result<()> {
         if self.pause {
             match key_event.code {
-                KeyCode::Enter => self.unpause(),
-                KeyCode::Char('q') => self.exit(),
-                KeyCode::Char('r') => {
-                    self.characters = vec![];
-                    self.cur_line = 0;
-                    self.position = 0;
-                    self.add_snippet();
+                KeyCode::Esc => self.unpause(),
+                KeyCode::Char('q') => self.quit(),
+                KeyCode::Char('r') => self.reset(),
+                KeyCode::Char('c') => {
+                    self.difficulty.next();
+                    self.reset();
+                }
+                KeyCode::Char('h') => {
+                    self.highlight.next();
                 }
                 _ => {}
             }
@@ -223,7 +247,23 @@ impl App {
         self.timer.start();
     }
 
-    fn exit(&mut self) {
-        self.exit = true;
+    fn quit(&mut self) {
+        self.quit = true;
+    }
+
+    fn reset(&mut self) {
+        self.characters = vec![];
+        self.cur_line = 0;
+        self.position = 0;
+        self.typed_chars = 0;
+        self.errors = 0;
+        self.timer = Timer::new();
+        self.text_generator = TextGenerator::new(self.difficulty.current().clone());
+        self.text_generator
+            .load_snippets()
+            .wrap_err("Loading snippets failed.")
+            .unwrap();
+        self.text_generator.calculate_character_weights();
+        self.add_snippet();
     }
 }
