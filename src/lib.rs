@@ -4,7 +4,7 @@ mod timer;
 pub mod tui;
 mod ui;
 
-use color_eyre::{eyre::WrapErr, Result};
+use color_eyre::{eyre::WrapErr, owo_colors::OwoColorize, Result};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use rand::seq::SliceRandom;
 use serde::{Deserialize, Serialize};
@@ -79,6 +79,8 @@ impl App {
 
         // Generate some initial snippets
         self.add_snippet();
+
+        // terminal.style(crossterm::cursor::SetCursorStyle::SteadyBar);
 
         while !self.exit {
             terminal.draw(|frame| ui(frame, &self))?;
