@@ -16,14 +16,13 @@ pub fn get_nth_word_boundaries(app: &App, word_offset: usize) -> (usize, usize, 
 
         for (idx, c) in line.iter().enumerate() {
             if (idx == position && !found_current) || found_current {
-                // Starting from current cursor position or already started in a previous iteration
-                if (idx == position && !found_current) {
-                    // Start of the current word is the current character
-                    // for highlighting purposes
+                // Starting from current cursor position or from beginning of next line
+                if idx == position && !found_current {
+                    // found our first word
                     word_start = idx;
                 }
                 found_current = true;
-                if c.c != ' ' && c.c != '\n' && word_end != 0 {
+                if c.c != ' ' && c.c != '\n' && word_end != 0 || idx == line.len() - 1 {
                     words_found += 1;
                     if words_found > word_offset {
                         return (word_start, word_end, line_offset);
