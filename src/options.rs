@@ -67,6 +67,15 @@ pub enum Highlight {
     NextWord,
     TwoWords,
 }
+impl Highlight {
+    pub fn get_words_ahead(&self) -> usize {
+        match self {
+            Highlight::NextWord => 1,
+            Highlight::TwoWords => 2,
+            _ => 0,
+        }
+    }
+}
 impl Labeled for Highlight {
     fn label(&self) -> String {
         match self {

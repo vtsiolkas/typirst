@@ -163,6 +163,9 @@ fn render_typing_area(f: &mut Frame, layout: Rect, app: &App) {
 
     let mut typing_lines = vec![];
 
+    let (word_start, word_end, line_offset) =
+        get_nth_word_boundaries(app, app.highlight.current().get_words_ahead());
+
     for line_idx in app.cur_line as isize - 2..app.cur_line as isize + 3 {
         if line_idx < 0 || line_idx >= app.characters.len() as isize {
             typing_lines.push(Line::from(vec![" ".into()]));
@@ -196,23 +199,11 @@ fn render_typing_area(f: &mut Frame, layout: Rect, app: &App) {
                     }
                 }
                 Highlight::Word => {
-                    let (word_start, word_end, _) = get_nth_word_boundaries(app, 0);
-                    if line_idx == app.cur_line as isize && idx >= word_start && idx < word_end {
-                        println!("{} {}", idx, word_end);
+                    if (line_idx == app.cur_line as isize) && idx >= word_start && idx < word_end {
                         text = text.yellow().underlined().bold();
                     }
                 }
-                Highlight::NextWord => {
-                    let (word_start, word_end, line_offset) = get_nth_word_boundaries(app, 1);
-                    if line_offset as isize == line_idx - app.cur_line as isize
-                        && idx >= word_start
-                        && idx < word_end
-                    {
-                        text = text.underlined().bold();
-                    }
-                }
-                Highlight::TwoWords => {
-                    let (word_start, word_end, line_offset) = get_nth_word_boundaries(app, 2);
+                Highlight::NextWord | Highlight::TwoWords => {
                     if line_offset as isize == line_idx - app.cur_line as isize
                         && idx >= word_start
                         && idx < word_end

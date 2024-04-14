@@ -6,7 +6,7 @@ pub fn get_nth_word_boundaries(app: &App, word_offset: usize) -> (usize, usize, 
     let mut words_found = 0;
     let mut found_current = false;
     let mut line_offset = 0;
-    let mut position = app.position;
+    let mut position = app.position.clone();
 
     // Iterate over lines starting from the current line
     for (line_idx, line) in app.characters.iter().enumerate().skip(app.cur_line) {
@@ -17,6 +17,11 @@ pub fn get_nth_word_boundaries(app: &App, word_offset: usize) -> (usize, usize, 
         for (idx, c) in line.iter().enumerate() {
             if (idx == position && !found_current) || found_current {
                 // Starting from current cursor position or already started in a previous iteration
+                if (idx == position && !found_current) {
+                    // Start of the current word is the current character
+                    // for highlighting purposes
+                    word_start = idx;
+                }
                 found_current = true;
                 if c.c != ' ' && c.c != '\n' && word_end != 0 {
                     words_found += 1;
