@@ -31,6 +31,8 @@ pub struct App {
     text_generator: TextGenerator,
     difficulty: CyclicOption<TextDifficulty>,
     highlight: CyclicOption<Highlight>,
+    debug: bool,
+    debug_text: String,
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
@@ -89,6 +91,8 @@ impl App {
                 'h',
             ),
             text_generator: TextGenerator::new(TextDifficulty::Lowercase),
+            debug: true,
+            debug_text: String::new(),
         }
     }
 
@@ -105,7 +109,7 @@ impl App {
         self.add_snippet();
 
         while !self.quit {
-            terminal.draw(|frame| ui(frame, &self))?;
+            terminal.draw(|frame| ui(frame, self))?;
             self.handle_events().wrap_err("handle events failed")?;
         }
 

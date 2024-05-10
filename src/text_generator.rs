@@ -91,23 +91,29 @@ impl TextGenerator {
     }
 
     fn select_snippet(&self, c: char) -> String {
-        let c_str = c.to_string();
-        let weights = self
-            .character_weights
-            .get(&c_str)
-            .cloned()
-            .unwrap_or_else(HashMap::new);
+        // let c_str = c.to_string();
+        // let weights = self
+        //     .character_weights
+        //     .get(&c_str)
+        //     .cloned()
+        //     .unwrap_or_else(HashMap::new);
+        //
+        // let mut weights_vec: Vec<_> = weights.iter().collect();
+        // weights_vec.sort_by(|a, b| b.1.cmp(a.1));
+        //
+        // let top_5: Vec<_> = weights_vec.into_iter().take(5).collect();
+        //
+        // let random_snippet = top_5
+        //     .choose(&mut rand::thread_rng())
+        //     .unwrap_or_else(|| &(&0, &0));
 
-        let mut weights_vec: Vec<_> = weights.iter().collect();
-        weights_vec.sort_by(|a, b| b.1.cmp(a.1));
+        // self.snippets[*random_snippet.0].clone()
 
-        let top_5: Vec<_> = weights_vec.into_iter().take(5).collect();
-
-        let random_snippet = top_5
+        // Select a random snippet
+        self.snippets
             .choose(&mut rand::thread_rng())
-            .unwrap_or_else(|| &(&0, &0));
-
-        self.snippets[*random_snippet.0].clone()
+            .unwrap()
+            .clone()
     }
 
     fn split_string(&self, input: &str, max_len: usize) -> Vec<Vec<Character>> {

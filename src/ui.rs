@@ -2,6 +2,7 @@ use crate::options::{CyclicOption, Highlight, Labeled};
 use crate::text_generator::CharState;
 use crate::utils::get_nth_word_boundaries;
 use crate::App;
+// use color_eyre::owo_colors::OwoColorize;
 use ratatui::style::palette::tailwind::{EMERALD, RED, SLATE};
 use ratatui::{
     layout::{Constraint, Direction, Layout},
@@ -43,7 +44,7 @@ fn get_colors(cur_line: usize, line_idx: usize, c: char) -> Colors {
 
 pub const WIDTH: u16 = 60;
 
-pub fn ui(f: &mut Frame, app: &App) {
+pub fn ui(f: &mut Frame, app: &mut App) {
     let vertical_layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints(vec![
@@ -54,6 +55,7 @@ pub fn ui(f: &mut Frame, app: &App) {
             Constraint::Length(3),
             Constraint::Length(3),
             Constraint::Length(4),
+            Constraint::Length(3),
         ])
         .split(f.size());
 
@@ -64,6 +66,9 @@ pub fn ui(f: &mut Frame, app: &App) {
     render_typing_area(f, vertical_layout[2], app);
     render_stats_area(f, vertical_layout[4], app);
     render_message_area(f, vertical_layout[5], app);
+    if app.debug {
+        render_debug_area(f, vertical_layout[7], app);
+    }
     /////////////////////////////////
     // Menu block
     /////////////////////////////////
@@ -151,7 +156,7 @@ fn render_options_block<T: Labeled>(
     f.render_widget(menu_text, layout);
 }
 
-fn render_typing_area(f: &mut Frame, layout: Rect, app: &App) {
+fn render_typing_area(f: &mut Frame, layout: Rect, app: &mut App) {
     let typing_area = Layout::default()
         .direction(Direction::Horizontal)
         .constraints(vec![
@@ -195,7 +200,7 @@ fn render_typing_area(f: &mut Frame, layout: Rect, app: &App) {
             match app.highlight.current() {
                 Highlight::Character => {
                     if line_idx == app.cur_line as isize && app.position == idx {
-                        text = text.white().underlined().bold();
+                        text = text.yellow().underlined().bold();
                     }
                 }
                 Highlight::Word => {
@@ -208,7 +213,7 @@ fn render_typing_area(f: &mut Frame, layout: Rect, app: &App) {
                         && idx >= word_start
                         && idx < word_end
                     {
-                        text = text.underlined().bold();
+                        text = text.yellow().underlined().bold();
                     }
                 }
                 _ => {}
@@ -313,4 +318,14 @@ fn render_message_area(f: &mut Frame, layout: Rect, app: &App) {
     .block(block);
 
     f.render_widget(message, layout);
+}
+
+fn render_debug_area(f: &mut Frame, layout: Rect, app: &App) {
+    let block = Block::default();
+    //let debug_text = Paragraph::new(app.debug_text.clone())
+    let debug_text = Paragraph::new(format!("debug: {}", app.debug_text.clone()))
+        .centered()
+        .block(block);
+
+    f.render_widget(debug_text, layout);
 }

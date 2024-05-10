@@ -1,12 +1,11 @@
 use crate::App;
 
-pub fn get_nth_word_boundaries(app: &App, word_offset: usize) -> (usize, usize, usize) {
+pub fn get_nth_word_boundaries(app: &mut App, word_offset: usize) -> (usize, usize, usize) {
     let mut word_start = 0;
     let mut word_end = 0;
     let mut words_found = 0;
     let mut found_current = false;
     let mut line_offset = 0;
-    let mut position = app.position.clone();
 
     // Iterate over lines starting from the current line
     for (line_idx, line) in app.characters.iter().enumerate().skip(app.cur_line) {
@@ -15,39 +14,36 @@ pub fn get_nth_word_boundaries(app: &App, word_offset: usize) -> (usize, usize, 
         }
 
         for (idx, c) in line.iter().enumerate() {
-            if (idx == position && !found_current) || found_current {
-                // Starting from current cursor position or from beginning of next line
-                if idx == position && !found_current {
+            if !found_current {
+                if idx == app.position && line_idx == app.cur_line {
                     // found our first word
                     word_start = idx;
+                    found_current = true;
                 }
-                found_current = true;
-                if c.c != ' ' && c.c != '\n' && word_end != 0 || idx == line.len() - 1 {
+            } else {
+                if c.c.is_whitespace() || idx == line.len() - 1 {
                     words_found += 1;
+                    word_end = idx;
+                    if line_offset > 0 && word_start > word_end {
+                        word_start = 0;
+                    } else {
+                        word_start += 1; // Skip the whitespace
+                    }
+                    app.debug_text = format!(
+                        "word_start: {}, word_end: {}, line_offset: {}, line_len: {}",
+                        word_start,
+                        word_end,
+                        line_offset,
+                        line.len()
+                    );
+
                     if words_found > word_offset {
                         return (word_start, word_end, line_offset);
                     }
                     word_start = idx; // Start of a new word
-                    word_end = 0; // Reset end since it's a new word
-                } else if c.c == ' ' || c.c == '\n' {
-                    if word_end == 0 {
-                        // First time setting end after finding start
-                        word_end = idx;
-                    }
                 }
             }
         }
-        // If the end of a line doesn't terminate a word, set it here
-        if word_end == 0 && word_start != 0 {
-            word_end = line.len();
-        }
-        // Check if we've found enough words
-        if words_found > word_offset {
-            return (word_start, word_end, line_offset);
-        }
-        // Reset for the next line
-        found_current = true; // Start at the beginning of the next line
-        position = 0; // Reset position for the next line
     }
 
     // Return the last word found if we run out of text, along with line offset
