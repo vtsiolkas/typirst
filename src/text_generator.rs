@@ -85,12 +85,12 @@ impl TextGenerator {
         }
     }
 
-    pub fn generate_characters(&self, c: char, max_len: usize) -> Vec<Vec<Character>> {
-        let snippet = self.select_snippet(c);
+    pub fn generate_characters(&self, max_len: usize) -> Vec<Vec<Character>> {
+        let snippet = self.select_snippet();
         self.split_string(&snippet, max_len)
     }
 
-    fn select_snippet(&self, c: char) -> String {
+    fn select_snippet(&self) -> String {
         // let c_str = c.to_string();
         // let weights = self
         //     .character_weights

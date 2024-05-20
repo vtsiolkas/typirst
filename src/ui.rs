@@ -286,7 +286,7 @@ fn render_stats_area(f: &mut Frame, layout: Rect, app: &App) {
         .border_set(border::THICK);
 
     let accuracy = if app.typed_chars > 0 {
-        (1.0 - app.errors as f64 / app.typed_chars as f64) * 100.0
+        (app.typed_chars as f64 - app.errors as f64) / app.typed_chars as f64 * 100.0
     } else {
         100.0
     };
