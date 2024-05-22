@@ -26,16 +26,15 @@ pub fn get_nth_word_boundaries(app: &mut App, word_offset: usize) -> (usize, usi
                     word_end = idx;
                     if line_offset > 0 && word_start > word_end {
                         word_start = 0;
-                    } else {
-                        word_start += 1; // Skip the whitespace
                     }
-                    // app.debug_text = format!(
-                    //     "word_start: {}, word_end: {}, line_offset: {}, line_len: {}",
-                    //     word_start,
-                    //     word_end,
-                    //     line_offset,
-                    //     line.len()
-                    // );
+                    app.debug_text = format!(
+                        "{}, word_start: {}, word_end: {}, line_offset: {}, line_len: {}",
+                        app.position,
+                        word_start,
+                        word_end,
+                        line_offset,
+                        line.len()
+                    );
 
                     if words_found > word_offset {
                         return (word_start, word_end, line_offset);

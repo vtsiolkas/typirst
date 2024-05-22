@@ -28,15 +28,15 @@ impl Character {
         }
     }
 
-    pub fn set_typed(&mut self, typed_c: char) -> usize {
+    pub fn set_typed(&mut self, typed_c: char) -> bool {
         self.typed_c = typed_c;
 
         if self.c == typed_c {
             self.state = CharState::Correct;
-            0
+            false
         } else {
             self.state = CharState::Incorrect;
-            1
+            true
         }
     }
 

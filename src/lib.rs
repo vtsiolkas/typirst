@@ -8,7 +8,7 @@ mod utils;
 use color_eyre::{eyre::WrapErr, Result};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use options::{CyclicOption, Highlight, TextDifficulty};
-use std::time::Duration;
+use std::time::Instant;
 use text_generator::{Character, TextGenerator};
 use timer::Timer;
 use ui::ui;
@@ -31,10 +31,9 @@ pub struct App {
     debug_text: String,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 struct TypingEvent {
-    time_from_start: Duration,
-    time_from_prev: Duration,
+    instant: Instant,
     error: bool,
 }
 
@@ -115,9 +114,16 @@ impl App {
             self.timer.start();
         }
         self.typed_chars += 1;
-        let errors = self.characters[self.cur_line][self.position].set_typed(c);
-        self.errors += errors;
+        let error = self.characters[self.cur_line][self.position].set_typed(c);
+        if error {
+            self.errors += 1;
+        }
         self.position += 1;
+
+        self.stats.push(TypingEvent {
+            instant: Instant::now(),
+            error,
+        });
 
         self.timer.reset_last_action();
 

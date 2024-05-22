@@ -186,7 +186,7 @@ fn render_typing_area(f: &mut Frame, layout: Rect, app: &mut App) {
             } else if c.typed_c == '\n' {
                 string = "¶".to_string();
             }
-            let mut text = Span::from(string).style(match c.state {
+            let mut text = Span::from(string.clone()).style(match c.state {
                 CharState::Untouched => {
                     Style::default().fg(get_colors(app.cur_line, line_idx as usize, c.c).untyped)
                 }
@@ -203,21 +203,18 @@ fn render_typing_area(f: &mut Frame, layout: Rect, app: &mut App) {
                         text = text.yellow().underlined().bold();
                     }
                 }
-                Highlight::Word => {
-                    if (line_idx == app.cur_line as isize) && idx >= word_start && idx < word_end {
-                        text = text.yellow().underlined().bold();
-                    }
-                }
-                Highlight::NextWord | Highlight::TwoWords => {
+                Highlight::Word | Highlight::NextWord | Highlight::TwoWords => {
                     if line_offset as isize == line_idx - app.cur_line as isize
                         && idx >= word_start
                         && idx < word_end
+                        && string != "\u{00B7}".to_string()
                     {
                         text = text.yellow().underlined().bold();
                     }
                 }
                 _ => {}
             }
+
             terminal_line.push(text);
         }
         typing_lines.push(Line::from(terminal_line));
