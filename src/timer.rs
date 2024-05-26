@@ -50,11 +50,11 @@ impl Timer {
         self.total_duration + extra_duration
     }
 
-    pub fn elapsed_last_action(&self) -> Duration {
-        let extra_duration = self
-            .last_action
-            .map_or_else(|| Duration::new(0, 0), |t| t.elapsed());
-
-        self.last_action_duration + extra_duration
-    }
+    // pub fn elapsed_last_action(&self) -> Duration {
+    //     let extra_duration = self
+    //         .last_action
+    //         .map_or_else(|| Duration::new(0, 0), |t| t.elapsed());
+    //
+    //     self.last_action_duration + extra_duration
+    // }
 }

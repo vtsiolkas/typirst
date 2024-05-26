@@ -43,6 +43,26 @@ pub trait Labeled {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
+pub enum NumberOfWords {
+    Ten = 10,
+    Fifty = 50,
+    OneHundred = 100,
+    TwoHundred = 200,
+    FiveHundred = 500,
+}
+impl Labeled for NumberOfWords {
+    fn label(&self) -> String {
+        match self {
+            NumberOfWords::Ten => "10".to_string(),
+            NumberOfWords::Fifty => "50".to_string(),
+            NumberOfWords::OneHundred => "100".to_string(),
+            NumberOfWords::TwoHundred => "200".to_string(),
+            NumberOfWords::FiveHundred => "500".to_string(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum TextDifficulty {
     Lowercase,
     Numbers,
@@ -59,6 +79,7 @@ impl Labeled for TextDifficulty {
         }
     }
 }
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Highlight {
     Nothing,

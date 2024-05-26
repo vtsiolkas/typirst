@@ -7,15 +7,15 @@ mod utils;
 
 use color_eyre::{eyre::WrapErr, Result};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
-use options::{CyclicOption, Highlight, TextDifficulty};
-use std::time::Instant;
+use options::{CyclicOption, Highlight, NumberOfWords, TextDifficulty};
+use std::time::Duration;
 use text_generator::{Character, TextGenerator};
 use timer::Timer;
 use ui::ui;
 
 #[derive(Debug)]
 pub struct App {
-    characters: Vec<Vec<Character>>,
+    lines: Vec<Vec<Character>>,
     stats: Vec<TypingEvent>,
     cur_line: usize,
     position: usize,
@@ -25,22 +25,26 @@ pub struct App {
     quit: bool,
     timer: Timer,
     text_generator: TextGenerator,
+    number_of_words: CyclicOption<NumberOfWords>,
     difficulty: CyclicOption<TextDifficulty>,
     highlight: CyclicOption<Highlight>,
-    debug: bool,
-    debug_text: String,
+    showing_stats: bool,
 }
 
 #[derive(Debug)]
 struct TypingEvent {
-    instant: Instant,
+    duration_since_start: Duration,
     error: bool,
 }
+
+const NUMBER_OF_WORDS_KEYBINDING: char = 'n';
+const DIFFICULTY_KEYBINDING: char = 'd';
+const HIGHLIGHT_KEYBINGING: char = 'h';
 
 impl App {
     pub fn new() -> Self {
         Self {
-            characters: vec![],
+            lines: vec![],
             stats: Vec::new(),
             cur_line: 0,
             position: 0,
@@ -49,14 +53,24 @@ impl App {
             pause: false,
             quit: false,
             timer: Timer::new(),
+            number_of_words: CyclicOption::new(
+                vec![
+                    NumberOfWords::Ten,
+                    NumberOfWords::Fifty,
+                    NumberOfWords::OneHundred,
+                    NumberOfWords::TwoHundred,
+                    NumberOfWords::FiveHundred,
+                ],
+                NUMBER_OF_WORDS_KEYBINDING,
+            ),
             difficulty: CyclicOption::new(
                 vec![
                     TextDifficulty::Lowercase,
-                    TextDifficulty::Numbers,
                     TextDifficulty::Uppercase,
+                    TextDifficulty::Numbers,
                     TextDifficulty::Symbols,
                 ],
-                'c',
+                DIFFICULTY_KEYBINDING,
             ),
             highlight: CyclicOption::new(
                 vec![
@@ -66,23 +80,21 @@ impl App {
                     Highlight::NextWord,
                     Highlight::TwoWords,
                 ],
-                'h',
+                HIGHLIGHT_KEYBINGING,
             ),
-            text_generator: TextGenerator::new(TextDifficulty::Lowercase),
-            debug: true,
-            debug_text: String::new(),
+            text_generator: TextGenerator::new(NumberOfWords::Ten, TextDifficulty::Lowercase),
+            showing_stats: false,
         }
     }
 
     /// runs the application's main loop until the user quits
     pub fn run(&mut self, terminal: &mut tui::Tui) -> Result<()> {
         self.text_generator
-            .load_snippets()
-            .wrap_err("Loading snippets failed.")?;
-        self.text_generator.calculate_character_weights();
+            .load_words()
+            .wrap_err("Loading word list failed.")?;
 
-        // Generate some initial snippets
-        self.add_snippet();
+        // Generate lines of characters
+        self.lines = self.text_generator.generate_lines(50);
 
         while !self.quit {
             terminal.draw(|frame| ui(frame, self))?;
@@ -104,9 +116,8 @@ impl App {
         }
     }
 
-    fn add_snippet(&mut self) {
-        let mut characters = self.text_generator.generate_characters(50);
-        self.characters.append(&mut characters);
+    fn show_stats(&mut self) {
+        self.showing_stats = true;
     }
 
     fn check_character(&mut self, c: char) {
@@ -114,24 +125,25 @@ impl App {
             self.timer.start();
         }
         self.typed_chars += 1;
-        let error = self.characters[self.cur_line][self.position].set_typed(c);
+        let error = self.lines[self.cur_line][self.position].set_typed(c);
         if error {
             self.errors += 1;
         }
         self.position += 1;
 
         self.stats.push(TypingEvent {
-            instant: Instant::now(),
+            duration_since_start: self.timer.elapsed(),
             error,
         });
 
         self.timer.reset_last_action();
 
-        if self.position == self.characters[self.cur_line].len() {
-            self.add_snippet();
-
+        if self.position == self.lines[self.cur_line].len() {
             self.position = 0;
             self.cur_line += 1;
+            if self.cur_line == self.lines.len() {
+                self.show_stats();
+            }
         }
     }
 
@@ -141,12 +153,26 @@ impl App {
                 KeyCode::Esc => self.unpause(),
                 KeyCode::Char('q') => self.quit(),
                 KeyCode::Char('r') => self.reset(),
-                KeyCode::Char('c') => {
+                KeyCode::Char(NUMBER_OF_WORDS_KEYBINDING) => {
+                    self.number_of_words.next();
+                    self.reset();
+                }
+                KeyCode::Char(DIFFICULTY_KEYBINDING) => {
                     self.difficulty.next();
                     self.reset();
                 }
-                KeyCode::Char('h') => {
+                KeyCode::Char(HIGHLIGHT_KEYBINGING) => {
                     self.highlight.next();
+                }
+                _ => {}
+            }
+            return Ok(());
+        } else if self.showing_stats {
+            match key_event.code {
+                KeyCode::Char('q') => self.quit(),
+                KeyCode::Char('r') => {
+                    self.reset();
+                    self.showing_stats = false;
                 }
                 _ => {}
             }
@@ -169,10 +195,10 @@ impl App {
                         self.position -= 1;
                     } else {
                         self.cur_line -= 1;
-                        self.position = self.characters[self.cur_line].len() - 1;
+                        self.position = self.lines[self.cur_line].len() - 1;
                     }
 
-                    self.characters[self.cur_line][self.position].reset();
+                    self.lines[self.cur_line][self.position].reset();
 
                     self.timer.reset_last_action();
                 }
@@ -199,18 +225,20 @@ impl App {
     }
 
     fn reset(&mut self) {
-        self.characters = vec![];
+        self.lines = vec![];
         self.cur_line = 0;
         self.position = 0;
         self.typed_chars = 0;
         self.errors = 0;
         self.timer = Timer::new();
-        self.text_generator = TextGenerator::new(self.difficulty.current().clone());
+        self.text_generator = TextGenerator::new(
+            self.number_of_words.current().clone(),
+            self.difficulty.current().clone(),
+        );
         self.text_generator
-            .load_snippets()
-            .wrap_err("Loading snippets failed.")
+            .load_words()
+            .wrap_err("Loading words failed.")
             .unwrap();
-        self.text_generator.calculate_character_weights();
-        self.add_snippet();
+        self.text_generator.generate_lines(50);
     }
 }

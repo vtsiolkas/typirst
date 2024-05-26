@@ -1,8 +1,8 @@
-use crate::options;
+use crate::options::{self, NumberOfWords};
+use crate::utils::{add_symbols, capitalize_20_percent, convert_15_percent_to_numbers};
 use color_eyre::Result;
 use options::TextDifficulty;
 use rand::seq::SliceRandom;
-use std::collections::HashMap;
 
 #[derive(Debug, Default)]
 pub enum CharState {
@@ -48,112 +48,61 @@ impl Character {
 
 #[derive(Debug)]
 pub struct TextGenerator {
-    snippets: Vec<String>,
-    character_weights: HashMap<String, HashMap<usize, usize>>,
+    words: Vec<String>,
     difficulty: TextDifficulty,
+    number_of_words: NumberOfWords,
 }
 
 impl TextGenerator {
-    pub fn new(difficulty: TextDifficulty) -> Self {
+    pub fn new(number_of_words: NumberOfWords, difficulty: TextDifficulty) -> Self {
         Self {
-            snippets: vec![],
-            character_weights: HashMap::new(),
+            words: vec![],
+            number_of_words,
             difficulty,
         }
     }
 
-    pub fn load_snippets(&mut self) -> Result<()> {
-        let text = include_str!("../assets/text.txt");
-        self.snippets = text
-            .lines()
-            .map(|s| s.to_string())
-            .filter(|s| s != "#!#!#!#!#!")
-            .collect();
+    pub fn load_words(&mut self) -> Result<()> {
+        let text = include_str!("../assets/words.txt");
+
+        // Select words from the text, split by comma
+        self.words = text
+            .split(',')
+            .map(|s| s.trim().to_string())
+            .collect::<Vec<String>>();
         Ok(())
     }
 
-    pub fn calculate_character_weights(&mut self) {
-        for (idx, line) in self.snippets.iter().enumerate() {
-            for c in line.chars() {
-                let c_str = c.to_string();
-                let weight = self
-                    .character_weights
-                    .entry(c_str)
-                    .or_insert(HashMap::new());
-                weight.entry(idx).and_modify(|v| *v += 1).or_insert(1);
+    pub fn generate_lines(&self, max_len: usize) -> Vec<Vec<Character>> {
+        let text = self.select_words();
+        self.split_string(text, max_len)
+    }
+
+    fn select_words(&self) -> String {
+        // Select num_words random words
+        (0..self.number_of_words as usize)
+            .map(|_| self.words.choose(&mut rand::thread_rng()).unwrap().clone())
+            .collect::<Vec<String>>()
+            .join(" ")
+    }
+
+    fn apply_difficulty(&self, input: String) -> String {
+        let mut words: Vec<String> = input.split_whitespace().map(|s| s.to_string()).collect();
+
+        words = match self.difficulty {
+            TextDifficulty::Lowercase => words,
+            TextDifficulty::Uppercase => capitalize_20_percent(words),
+            TextDifficulty::Numbers => convert_15_percent_to_numbers(capitalize_20_percent(words)),
+            TextDifficulty::Symbols => {
+                add_symbols(convert_15_percent_to_numbers(capitalize_20_percent(words)))
             }
-        }
-    }
-
-    pub fn generate_characters(&self, max_len: usize) -> Vec<Vec<Character>> {
-        let snippet = self.select_snippet();
-        self.split_string(&snippet, max_len)
-    }
-
-    fn select_snippet(&self) -> String {
-        // let c_str = c.to_string();
-        // let weights = self
-        //     .character_weights
-        //     .get(&c_str)
-        //     .cloned()
-        //     .unwrap_or_else(HashMap::new);
-        //
-        // let mut weights_vec: Vec<_> = weights.iter().collect();
-        // weights_vec.sort_by(|a, b| b.1.cmp(a.1));
-        //
-        // let top_5: Vec<_> = weights_vec.into_iter().take(5).collect();
-        //
-        // let random_snippet = top_5
-        //     .choose(&mut rand::thread_rng())
-        //     .unwrap_or_else(|| &(&0, &0));
-
-        // self.snippets[*random_snippet.0].clone()
-
-        // Select a random snippet
-        self.snippets
-            .choose(&mut rand::thread_rng())
-            .unwrap()
-            .clone()
-    }
-
-    fn split_string(&self, input: &str, max_len: usize) -> Vec<Vec<Character>> {
-        let input = match self.difficulty {
-            TextDifficulty::Lowercase => input
-                .chars()
-                .map(|c| {
-                    if c.is_alphabetic() || c.is_whitespace() {
-                        c
-                    } else {
-                        ' '
-                    }
-                })
-                .collect::<String>()
-                .to_lowercase(),
-            TextDifficulty::Numbers => input
-                .chars()
-                .map(|c| {
-                    if c.is_alphanumeric() || c.is_whitespace() {
-                        c
-                    } else {
-                        ' '
-                    }
-                })
-                .collect::<String>()
-                .to_lowercase(),
-            TextDifficulty::Uppercase => input
-                .chars()
-                .map(|c| {
-                    if c.is_alphanumeric() || c.is_whitespace() {
-                        c
-                    } else {
-                        ' '
-                    }
-                })
-                .collect::<String>(),
-            TextDifficulty::Symbols => String::from(input),
         };
 
-        let input = input.split_whitespace().collect::<Vec<&str>>().join(" ");
+        words.join(" ")
+    }
+
+    fn split_string(&self, input: String, max_len: usize) -> Vec<Vec<Character>> {
+        let input = self.apply_difficulty(input);
 
         let mut result = Vec::new();
         let mut start = 0;

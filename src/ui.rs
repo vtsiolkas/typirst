@@ -1,6 +1,6 @@
 use crate::options::{CyclicOption, Highlight, Labeled};
 use crate::text_generator::CharState;
-use crate::utils::get_nth_word_boundaries;
+use crate::utils::{calculate_wpm, get_nth_word_boundaries};
 use crate::App;
 // use color_eyre::owo_colors::OwoColorize;
 use ratatui::style::palette::tailwind::{EMERALD, RED, SLATE};
@@ -10,7 +10,9 @@ use ratatui::{
     style::Style,
     symbols::border,
     text::{Line, Span},
-    widgets::{block::Position, block::Title, Block, Borders, Paragraph},
+    widgets::{
+        block::Position, block::Title, Axis, Block, Borders, Chart, Dataset, GraphType, Paragraph,
+    },
     Frame,
 };
 
@@ -45,6 +47,14 @@ fn get_colors(cur_line: usize, line_idx: usize, c: char) -> Colors {
 pub const WIDTH: u16 = 60;
 
 pub fn ui(f: &mut Frame, app: &mut App) {
+    if app.showing_stats {
+        render_stats(f, app);
+    } else {
+        render_typing(f, app);
+    }
+}
+
+fn render_typing(f: &mut Frame, app: &mut App) {
     let vertical_layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints(vec![
@@ -54,8 +64,8 @@ pub fn ui(f: &mut Frame, app: &mut App) {
             Constraint::Fill(2),
             Constraint::Length(3),
             Constraint::Length(3),
+            Constraint::Fill(3),
             Constraint::Length(4),
-            Constraint::Length(3),
         ])
         .split(f.size());
 
@@ -66,9 +76,6 @@ pub fn ui(f: &mut Frame, app: &mut App) {
     render_typing_area(f, vertical_layout[2], app);
     render_stats_area(f, vertical_layout[4], app);
     render_message_area(f, vertical_layout[5], app);
-    if app.debug {
-        render_debug_area(f, vertical_layout[7], app);
-    }
     /////////////////////////////////
     // Menu block
     /////////////////////////////////
@@ -84,31 +91,19 @@ pub fn ui(f: &mut Frame, app: &mut App) {
                 Constraint::Length(18),
                 Constraint::Fill(1),
             ])
-            .split(vertical_layout[6]);
+            .split(vertical_layout[7]);
 
-        render_options_block(f, menu_block[1], app.difficulty.clone());
-        render_options_block(f, menu_block[2], app.highlight.clone());
-
-        let block = Block::default();
-        let menu_text = Paragraph::new(vec![
-            Line::from(vec![]),
-            Line::from(vec![]),
-            Line::from(vec![
-                Span::from("(q)").style(Style::default().bg(SLATE.c700)),
-                Span::from(" quit"),
-            ]),
-        ])
-        .block(block);
-
-        f.render_widget(menu_text, menu_block[3]);
+        render_options_block(f, menu_block[1], app.number_of_words.clone());
+        render_options_block(f, menu_block[2], app.difficulty.clone());
+        render_options_block(f, menu_block[3], app.highlight.clone());
 
         let block = Block::default();
         let menu_text = Paragraph::new(vec![
             Line::from(vec![]),
             Line::from(vec![]),
             Line::from(vec![
-                Span::from("(q)").style(Style::default().bg(SLATE.c700)),
-                Span::from(" quit"),
+                Span::from("(r)").style(Style::default().bg(SLATE.c700)),
+                Span::from(" restart"),
             ]),
         ])
         .block(block);
@@ -120,8 +115,8 @@ pub fn ui(f: &mut Frame, app: &mut App) {
             Line::from(vec![]),
             Line::from(vec![]),
             Line::from(vec![
-                Span::from("(r)").style(Style::default().bg(SLATE.c700)),
-                Span::from(" restart"),
+                Span::from("(q)").style(Style::default().bg(SLATE.c700)),
+                Span::from(" quit"),
             ]),
         ])
         .block(block);
@@ -135,12 +130,12 @@ fn render_options_block<T: Labeled>(
     layout: Rect,
     option_container: CyclicOption<T>,
 ) {
-    let mut difficulty_options = vec![];
+    let mut visible_options = vec![];
     let options = option_container.surrounding();
-    difficulty_options.push(
+    visible_options.push(
         Line::from(format!("    {}", options.0.label())).style(Style::default().fg(SLATE.c500)),
     );
-    difficulty_options.push(
+    visible_options.push(
         Line::from(format!(
             "({}) {}",
             option_container.keybinding,
@@ -148,11 +143,11 @@ fn render_options_block<T: Labeled>(
         ))
         .style(Style::default().fg(SLATE.c300)),
     );
-    difficulty_options.push(
+    visible_options.push(
         Line::from(format!("    {}", options.2.label())).style(Style::default().fg(SLATE.c500)),
     );
 
-    let menu_text = Paragraph::new(difficulty_options);
+    let menu_text = Paragraph::new(visible_options);
     f.render_widget(menu_text, layout);
 }
 
@@ -172,12 +167,12 @@ fn render_typing_area(f: &mut Frame, layout: Rect, app: &mut App) {
         get_nth_word_boundaries(app, app.highlight.current().get_words_ahead());
 
     for line_idx in app.cur_line as isize - 2..app.cur_line as isize + 3 {
-        if line_idx < 0 || line_idx >= app.characters.len() as isize {
+        if line_idx < 0 || line_idx >= app.lines.len() as isize {
             typing_lines.push(Line::from(vec![" ".into()]));
             continue;
         }
 
-        let line = app.characters.get(line_idx as usize).unwrap();
+        let line = app.lines.get(line_idx as usize).unwrap();
         let mut terminal_line = vec![];
         for (idx, c) in line.iter().enumerate() {
             let mut string = c.typed_c.to_string();
@@ -226,7 +221,7 @@ fn render_typing_area(f: &mut Frame, layout: Rect, app: &mut App) {
 
     f.set_cursor(
         typing_area[1].x
-            + ((WIDTH as f32 - app.characters[app.cur_line].len() as f32) / 2.0).ceil() as u16
+            + ((WIDTH as f32 - app.lines[app.cur_line].len() as f32) / 2.0).ceil() as u16
             + app.position as u16,
         typing_area[1].y + 2,
     );
@@ -317,12 +312,54 @@ fn render_message_area(f: &mut Frame, layout: Rect, app: &App) {
     f.render_widget(message, layout);
 }
 
-fn render_debug_area(f: &mut Frame, layout: Rect, app: &App) {
-    let block = Block::default();
-    //let debug_text = Paragraph::new(app.debug_text.clone())
-    let debug_text = Paragraph::new(format!("debug: {}", app.debug_text.clone()))
-        .centered()
-        .block(block);
+fn render_stats(f: &mut Frame, app: &mut App) {
+    let vertical_layout = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints(vec![Constraint::Fill(1)])
+        .split(f.size());
 
-    f.render_widget(debug_text, layout);
+    let wpm_data = calculate_wpm(&app.stats);
+    let datasets = vec![
+        // Scatter chart
+        Dataset::default()
+            .name("data1")
+            .marker(symbols::Marker::Dot)
+            .graph_type(GraphType::Scatter)
+            .style(Style::default().cyan())
+            .data(&wpm_data[1..]),
+        // Line chart
+        Dataset::default()
+            .name("data2")
+            .marker(symbols::Marker::Braille)
+            .graph_type(GraphType::Line)
+            .style(Style::default().magenta())
+            .data(&wpm_data),
+    ];
+
+    let max_secs = app.stats.last().unwrap().duration_since_start.as_secs_f64();
+    // Create the X axis and define its properties
+    let x_axis = Axis::default()
+        .title("X Axis".red())
+        .style(Style::default().white())
+        .bounds([0.0, max_secs + 1.0])
+        .labels(vec!["0.0".into(), format!("{}", max_secs).into()]);
+
+    let max_wpm = wpm_data[1..]
+        .iter()
+        .map(|&(_, wpm)| wpm)
+        .max_by(|a, b| a.partial_cmp(b).unwrap())
+        .unwrap_or(0.0);
+    // Create the Y axis and define its properties
+    let y_axis = Axis::default()
+        .title("Y Axis".red())
+        .style(Style::default().white())
+        .bounds([0.0, max_wpm + 1.0])
+        .labels(vec!["0.0".into(), format!("{}", max_wpm).into()]);
+
+    // Create the chart and link all the parts together
+    let chart = Chart::new(datasets)
+        .block(Block::new().title("Chart"))
+        .x_axis(x_axis)
+        .y_axis(y_axis);
+    f.render_widget(chart, vertical_layout[0]);
 }
