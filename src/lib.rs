@@ -37,7 +37,7 @@ struct TypingEvent {
     error: bool,
 }
 
-const NUMBER_OF_WORDS_KEYBINDING: char = 'n';
+const NUMBER_OF_WORDS_KEYBINDING: char = 'w';
 const DIFFICULTY_KEYBINDING: char = 'd';
 const HIGHLIGHT_KEYBINGING: char = 'h';
 
@@ -56,12 +56,14 @@ impl App {
             number_of_words: CyclicOption::new(
                 vec![
                     NumberOfWords::Ten,
+                    NumberOfWords::Thirty,
                     NumberOfWords::Fifty,
                     NumberOfWords::OneHundred,
                     NumberOfWords::TwoHundred,
                     NumberOfWords::FiveHundred,
                 ],
                 NUMBER_OF_WORDS_KEYBINDING,
+                "Words",
             ),
             difficulty: CyclicOption::new(
                 vec![
@@ -71,6 +73,7 @@ impl App {
                     TextDifficulty::Symbols,
                 ],
                 DIFFICULTY_KEYBINDING,
+                "Difficulty",
             ),
             highlight: CyclicOption::new(
                 vec![
@@ -81,6 +84,7 @@ impl App {
                     Highlight::TwoWords,
                 ],
                 HIGHLIGHT_KEYBINGING,
+                "Highlight",
             ),
             text_generator: TextGenerator::new(NumberOfWords::Ten, TextDifficulty::Lowercase),
             showing_stats: false,
@@ -117,13 +121,11 @@ impl App {
     }
 
     fn show_stats(&mut self) {
+        self.pause();
         self.showing_stats = true;
     }
 
     fn check_character(&mut self, c: char) {
-        if !self.timer.running {
-            self.timer.start();
-        }
         self.typed_chars += 1;
         let error = self.lines[self.cur_line][self.position].set_typed(c);
         if error {
@@ -131,12 +133,14 @@ impl App {
         }
         self.position += 1;
 
-        self.stats.push(TypingEvent {
-            duration_since_start: self.timer.elapsed(),
-            error,
-        });
-
-        self.timer.reset_last_action();
+        if !self.timer.running {
+            self.timer.start();
+        } else {
+            self.stats.push(TypingEvent {
+                duration_since_start: self.timer.elapsed(),
+                error,
+            });
+        }
 
         if self.position == self.lines[self.cur_line].len() {
             self.position = 0;
@@ -148,11 +152,24 @@ impl App {
     }
 
     fn handle_key_event(&mut self, key_event: KeyEvent) -> Result<()> {
-        if self.pause {
+        if self.showing_stats {
+            match key_event.code {
+                KeyCode::Char('q') => self.quit(),
+                KeyCode::Char('r') => {
+                    self.unpause();
+                    self.reset();
+                }
+                _ => {}
+            }
+            return Ok(());
+        } else if self.pause {
             match key_event.code {
                 KeyCode::Esc => self.unpause(),
                 KeyCode::Char('q') => self.quit(),
-                KeyCode::Char('r') => self.reset(),
+                KeyCode::Char('r') => {
+                    self.unpause();
+                    self.reset();
+                }
                 KeyCode::Char(NUMBER_OF_WORDS_KEYBINDING) => {
                     self.number_of_words.next();
                     self.reset();
@@ -163,16 +180,6 @@ impl App {
                 }
                 KeyCode::Char(HIGHLIGHT_KEYBINGING) => {
                     self.highlight.next();
-                }
-                _ => {}
-            }
-            return Ok(());
-        } else if self.showing_stats {
-            match key_event.code {
-                KeyCode::Char('q') => self.quit(),
-                KeyCode::Char('r') => {
-                    self.reset();
-                    self.showing_stats = false;
                 }
                 _ => {}
             }
@@ -199,8 +206,6 @@ impl App {
                     }
 
                     self.lines[self.cur_line][self.position].reset();
-
-                    self.timer.reset_last_action();
                 }
 
                 KeyCode::Esc => self.pause(),
@@ -217,7 +222,10 @@ impl App {
 
     fn unpause(&mut self) {
         self.pause = false;
-        self.timer.start();
+        // Only restart the timer if we're not at the beginning of the game
+        if self.timer.elapsed().as_secs() > 0 {
+            self.timer.start();
+        }
     }
 
     fn quit(&mut self) {
@@ -225,12 +233,13 @@ impl App {
     }
 
     fn reset(&mut self) {
-        self.lines = vec![];
         self.cur_line = 0;
         self.position = 0;
         self.typed_chars = 0;
         self.errors = 0;
         self.timer = Timer::new();
+        self.stats = Vec::new();
+        self.showing_stats = false;
         self.text_generator = TextGenerator::new(
             self.number_of_words.current().clone(),
             self.difficulty.current().clone(),
@@ -239,6 +248,6 @@ impl App {
             .load_words()
             .wrap_err("Loading words failed.")
             .unwrap();
-        self.text_generator.generate_lines(50);
+        self.lines = self.text_generator.generate_lines(50);
     }
 }

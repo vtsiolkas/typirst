@@ -1,8 +1,7 @@
 use crate::options::{CyclicOption, Highlight, Labeled};
 use crate::text_generator::CharState;
-use crate::utils::{calculate_wpm, get_nth_word_boundaries};
+use crate::utils::{calculate_wpm_and_errors_datasets, get_nth_word_boundaries};
 use crate::App;
-// use color_eyre::owo_colors::OwoColorize;
 use ratatui::style::palette::tailwind::{EMERALD, RED, SLATE};
 use ratatui::{
     layout::{Constraint, Direction, Layout},
@@ -10,9 +9,7 @@ use ratatui::{
     style::Style,
     symbols::border,
     text::{Line, Span},
-    widgets::{
-        block::Position, block::Title, Axis, Block, Borders, Chart, Dataset, GraphType, Paragraph,
-    },
+    widgets::{block::Title, Axis, Block, Borders, Chart, Dataset, GraphType, Paragraph},
     Frame,
 };
 
@@ -61,11 +58,11 @@ fn render_typing(f: &mut Frame, app: &mut App) {
             Constraint::Length(1),
             Constraint::Fill(1),
             Constraint::Length(5),
-            Constraint::Fill(2),
+            Constraint::Fill(1),
             Constraint::Length(3),
             Constraint::Length(3),
-            Constraint::Fill(3),
-            Constraint::Length(4),
+            Constraint::Fill(1),
+            Constraint::Length(5),
         ])
         .split(f.size());
 
@@ -84,48 +81,35 @@ fn render_typing(f: &mut Frame, app: &mut App) {
             .direction(Direction::Horizontal)
             .constraints(vec![
                 Constraint::Fill(1),
+                Constraint::Length(13),
                 Constraint::Length(18),
-                Constraint::Length(18),
-                Constraint::Length(18),
+                Constraint::Length(22),
                 Constraint::Length(18),
                 Constraint::Length(18),
                 Constraint::Fill(1),
             ])
             .split(vertical_layout[7]);
 
-        render_options_block(f, menu_block[1], app.number_of_words.clone());
-        render_options_block(f, menu_block[2], app.difficulty.clone());
-        render_options_block(f, menu_block[3], app.highlight.clone());
+        render_cyclic_options_block(f, menu_block[1], app.number_of_words.clone());
+        render_cyclic_options_block(f, menu_block[2], app.difficulty.clone());
+        render_cyclic_options_block(f, menu_block[3], app.highlight.clone());
 
-        let block = Block::default();
-        let menu_text = Paragraph::new(vec![
-            Line::from(vec![]),
-            Line::from(vec![]),
-            Line::from(vec![
-                Span::from("(r)").style(Style::default().bg(SLATE.c700)),
-                Span::from(" restart"),
-            ]),
-        ])
-        .block(block);
-
-        f.render_widget(menu_text, menu_block[4]);
-
-        let block = Block::default();
-        let menu_text = Paragraph::new(vec![
-            Line::from(vec![]),
-            Line::from(vec![]),
-            Line::from(vec![
-                Span::from("(q)").style(Style::default().bg(SLATE.c700)),
-                Span::from(" quit"),
-            ]),
-        ])
-        .block(block);
-
-        f.render_widget(menu_text, menu_block[5]);
+        render_options_keybind_block(f, menu_block[4], "r", "Restart");
+        render_options_keybind_block(f, menu_block[5], "q", "Quit");
     }
 }
 
-fn render_options_block<T: Labeled>(
+fn render_options_keybind_block(f: &mut Frame, layout: Rect, keybinding: &str, label: &str) {
+    let block = Block::default();
+    let menu_text = Paragraph::new(vec![Line::from(format!(" {} ({}) ", label, keybinding))
+        .centered()
+        .style(Style::default().bold().bg(SLATE.c800).fg(SLATE.c100))])
+    .block(block);
+
+    f.render_widget(menu_text, layout);
+}
+
+fn render_cyclic_options_block<T: Labeled>(
     f: &mut Frame,
     layout: Rect,
     option_container: CyclicOption<T>,
@@ -133,18 +117,27 @@ fn render_options_block<T: Labeled>(
     let mut visible_options = vec![];
     let options = option_container.surrounding();
     visible_options.push(
-        Line::from(format!("    {}", options.0.label())).style(Style::default().fg(SLATE.c500)),
-    );
-    visible_options.push(
         Line::from(format!(
-            "({}) {}",
-            option_container.keybinding,
-            options.1.label()
+            " {} ({}) ",
+            option_container.label, option_container.keybinding
         ))
-        .style(Style::default().fg(SLATE.c300)),
+        .centered()
+        .style(Style::default().bold().bg(SLATE.c800).fg(SLATE.c100)),
     );
     visible_options.push(
-        Line::from(format!("    {}", options.2.label())).style(Style::default().fg(SLATE.c500)),
+        Line::from(format!("{}", options.0.label()))
+            .centered()
+            .style(Style::default().fg(SLATE.c500)),
+    );
+    visible_options.push(
+        Line::from(format!("{}", options.1.label()))
+            .centered()
+            .style(Style::default().bold().fg(SLATE.c300)),
+    );
+    visible_options.push(
+        Line::from(format!("{}", options.2.label()))
+            .centered()
+            .style(Style::default().fg(SLATE.c500)),
     );
 
     let menu_text = Paragraph::new(visible_options);
@@ -238,17 +231,22 @@ fn render_stats_area(f: &mut Frame, layout: Rect, app: &App) {
         ])
         .split(layout);
 
-    let title = Title::from(" WPM ".white());
+    render_average_wpm(f, stats_layout[1], app);
+    render_accuracy(f, stats_layout[2], app);
+}
+
+fn render_stats_block(f: &mut Frame, layout: Rect, title: &str, value: String) {
     let block = Block::default()
-        .title(
-            title
-                .alignment(Alignment::Center)
-                .position(Position::Bottom),
-        )
+        .title(title.white())
         .borders(Borders::ALL)
         .border_style(SLATE.c500)
         .border_set(border::THICK);
 
+    let text = Paragraph::new(value).centered().block(block);
+    f.render_widget(text, layout);
+}
+
+fn render_average_wpm(f: &mut Frame, layout: Rect, app: &App) {
     let elapsed = app.timer.elapsed();
     let wpm: f64 = if elapsed.as_millis() <= 2 {
         0.0
@@ -260,33 +258,24 @@ fn render_stats_area(f: &mut Frame, layout: Rect, app: &App) {
     let wpm_string = if wpm == 0.0 {
         "-".to_string()
     } else {
-        format!("{:.1}", wpm)
+        format!("{:.0}", wpm)
     };
 
-    let wpm_text = Paragraph::new(wpm_string).centered().block(block);
-    f.render_widget(wpm_text, stats_layout[1]);
+    render_stats_block(f, layout, " WPM ", wpm_string);
+}
 
-    let title = Title::from(" Accuracy ".white());
-    let block = Block::default()
-        .title(
-            title
-                .alignment(Alignment::Center)
-                .position(Position::Bottom),
-        )
-        .borders(Borders::ALL)
-        .border_style(SLATE.c500)
-        .border_set(border::THICK);
-
+fn render_accuracy(f: &mut Frame, layout: Rect, app: &App) {
     let accuracy = if app.typed_chars > 0 {
         (app.typed_chars as f64 - app.errors as f64) / app.typed_chars as f64 * 100.0
     } else {
         100.0
     };
 
-    let accuracy_text = Paragraph::new(format!("{:.0}%", accuracy))
-        .centered()
-        .block(block);
-    f.render_widget(accuracy_text, stats_layout[2]);
+    render_stats_block(f, layout, " Accuracy ", format!("{:.0}%", accuracy));
+}
+
+fn render_errors(f: &mut Frame, layout: Rect, app: &App) {
+    render_stats_block(f, layout, " Errors ", format!("{:.0}", app.errors));
 }
 
 fn render_message_area(f: &mut Frame, layout: Rect, app: &App) {
@@ -315,51 +304,101 @@ fn render_message_area(f: &mut Frame, layout: Rect, app: &App) {
 fn render_stats(f: &mut Frame, app: &mut App) {
     let vertical_layout = Layout::default()
         .direction(Direction::Vertical)
-        .constraints(vec![Constraint::Fill(1)])
+        .constraints(vec![
+            Constraint::Fill(1),
+            Constraint::Percentage(50),
+            Constraint::Length(3),
+            Constraint::Fill(1),
+            Constraint::Length(4),
+        ])
         .split(f.size());
 
-    let wpm_data = calculate_wpm(&app.stats);
+    let graph_layout = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints(vec![
+            Constraint::Length(1),
+            Constraint::Fill(1),
+            Constraint::Length(1),
+        ])
+        .split(vertical_layout[1]);
+
+    let (wpm_data, error_data) = calculate_wpm_and_errors_datasets(&app.stats);
     let datasets = vec![
-        // Scatter chart
-        Dataset::default()
-            .name("data1")
-            .marker(symbols::Marker::Dot)
-            .graph_type(GraphType::Scatter)
-            .style(Style::default().cyan())
-            .data(&wpm_data[1..]),
         // Line chart
         Dataset::default()
-            .name("data2")
+            .name("WPM")
             .marker(symbols::Marker::Braille)
             .graph_type(GraphType::Line)
-            .style(Style::default().magenta())
+            .style(Style::default().yellow())
             .data(&wpm_data),
+        // Scatter chart
+        Dataset::default()
+            .name("Errors")
+            .marker(symbols::Marker::Dot)
+            .graph_type(GraphType::Scatter)
+            .style(Style::default().red())
+            .data(&error_data),
     ];
 
     let max_secs = app.stats.last().unwrap().duration_since_start.as_secs_f64();
     // Create the X axis and define its properties
     let x_axis = Axis::default()
-        .title("X Axis".red())
+        .title("Time".green())
         .style(Style::default().white())
-        .bounds([0.0, max_secs + 1.0])
-        .labels(vec!["0.0".into(), format!("{}", max_secs).into()]);
+        .bounds([0.0, max_secs])
+        .labels(vec!["0".into(), format!("{:.2}", max_secs).into()]);
 
-    let max_wpm = wpm_data[1..]
+    let max_wpm = wpm_data
         .iter()
         .map(|&(_, wpm)| wpm)
         .max_by(|a, b| a.partial_cmp(b).unwrap())
         .unwrap_or(0.0);
     // Create the Y axis and define its properties
     let y_axis = Axis::default()
-        .title("Y Axis".red())
+        .title("WPM".green())
         .style(Style::default().white())
-        .bounds([0.0, max_wpm + 1.0])
-        .labels(vec!["0.0".into(), format!("{}", max_wpm).into()]);
+        .bounds([0.0, max_wpm + 10.0])
+        .labels(vec![
+            "0".into(),
+            format!("{:.0}", max_wpm / 2.0).into(),
+            format!("{:.0}", max_wpm).into(),
+        ]);
 
     // Create the chart and link all the parts together
+    let title = Title::from("WPM chart".white().bold());
     let chart = Chart::new(datasets)
-        .block(Block::new().title("Chart"))
+        .block(Block::new().title(title.alignment(Alignment::Center)))
         .x_axis(x_axis)
         .y_axis(y_axis);
-    f.render_widget(chart, vertical_layout[0]);
+    f.render_widget(chart, graph_layout[1]);
+
+    // Stats layout
+    let stats_layout = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints(vec![
+            Constraint::Fill(2),
+            Constraint::Length(18),
+            Constraint::Fill(1),
+            Constraint::Length(18),
+            Constraint::Fill(1),
+            Constraint::Length(18),
+            Constraint::Fill(2),
+        ])
+        .split(vertical_layout[2]);
+    render_average_wpm(f, stats_layout[1], app);
+    render_errors(f, stats_layout[3], app);
+    render_accuracy(f, stats_layout[5], app);
+
+    // Options layout
+    let options_layout = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints(vec![
+            Constraint::Fill(1),
+            Constraint::Length(18),
+            Constraint::Length(18),
+            Constraint::Fill(1),
+        ])
+        .split(vertical_layout[4]);
+    render_options_keybind_block(f, options_layout[1], "r", "Restart");
+    render_options_keybind_block(f, options_layout[2], "q", "Quit");
 }

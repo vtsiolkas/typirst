@@ -145,19 +145,31 @@ pub fn add_symbols(vec: Vec<String>) -> Vec<String> {
         .collect()
 }
 
-pub fn calculate_wpm(events: &[TypingEvent]) -> Vec<(f64, f64)> {
+pub fn calculate_wpm_and_errors_datasets(
+    events: &[TypingEvent],
+) -> (Vec<(f64, f64)>, Vec<(f64, f64)>) {
     let mut wpm_data = Vec::new();
+    let mut error_data = Vec::new();
     let mut total_chars = 0;
 
-    for event in events.iter() {
+    for (i, event) in events.iter().enumerate() {
+        let secs = event.duration_since_start.as_secs_f64();
+        let minutes = secs / 60.0;
+
         if !event.error {
             total_chars += 1;
+        } else {
+            error_data.push((secs, 5.0));
         }
 
-        let minutes = event.duration_since_start.as_secs_f64() / 60.0;
         let wpm = (total_chars as f64) / 5.0 / minutes;
-        wpm_data.push((event.duration_since_start.as_secs_f64(), wpm));
+        // also push a zero time value with the wpm of the first event
+        // to make the graph start at 0
+        if i == 0 {
+            wpm_data.push((0.0, wpm));
+        }
+        wpm_data.push((secs, wpm));
     }
 
-    wpm_data
+    (wpm_data, error_data)
 }

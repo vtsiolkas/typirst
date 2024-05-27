@@ -2,14 +2,16 @@
 pub struct CyclicOption<T> {
     options: Vec<T>,
     pub keybinding: char,
+    pub label: String,
     current: usize,
 }
 
 impl<T> CyclicOption<T> {
-    pub fn new(options: Vec<T>, c: char) -> Self {
+    pub fn new(options: Vec<T>, c: char, label: &str) -> Self {
         Self {
             options,
             keybinding: c,
+            label: label.to_string(),
             current: 0,
         }
     }
@@ -45,6 +47,7 @@ pub trait Labeled {
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum NumberOfWords {
     Ten = 10,
+    Thirty = 30,
     Fifty = 50,
     OneHundred = 100,
     TwoHundred = 200,
@@ -54,6 +57,7 @@ impl Labeled for NumberOfWords {
     fn label(&self) -> String {
         match self {
             NumberOfWords::Ten => "10".to_string(),
+            NumberOfWords::Thirty => "30".to_string(),
             NumberOfWords::Fifty => "50".to_string(),
             NumberOfWords::OneHundred => "100".to_string(),
             NumberOfWords::TwoHundred => "200".to_string(),
