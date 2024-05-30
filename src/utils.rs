@@ -50,25 +50,32 @@ pub fn get_nth_word_boundaries(app: &mut App, word_offset: usize) -> (usize, usi
     (word_start, word_end, line_offset)
 }
 
+/// Capitalize 20% of the words, with 20% of those being fully capitalized
 pub fn capitalize_20_percent(vec: Vec<String>) -> Vec<String> {
     let mut rng = thread_rng();
     let total_count = vec.len();
-    let capitalize_count = (total_count as f64 * 0.2).ceil() as usize;
+    let capitalize_count = (total_count as f64 * 0.20).ceil() as usize;
+    let full_capitalize_count = (capitalize_count as f64 * 0.20).ceil() as usize;
 
     let mut indices: Vec<usize> = (0..total_count).collect();
     indices.shuffle(&mut rng);
 
     let capitalize_indices = &indices[..capitalize_count];
+    let full_capitalize_indices = &capitalize_indices[..full_capitalize_count];
 
     vec.into_iter()
         .enumerate()
         .map(|(i, s)| {
             if capitalize_indices.contains(&i) {
-                let mut chars = s.chars();
-                match chars.next() {
-                    None => s,
-                    Some(first_char) => {
-                        first_char.to_uppercase().collect::<String>() + chars.as_str()
+                if full_capitalize_indices.contains(&i) {
+                    s.to_uppercase()
+                } else {
+                    let mut chars = s.chars();
+                    match chars.next() {
+                        None => s,
+                        Some(first_char) => {
+                            first_char.to_uppercase().collect::<String>() + chars.as_str()
+                        }
                     }
                 }
             } else {
@@ -78,10 +85,11 @@ pub fn capitalize_20_percent(vec: Vec<String>) -> Vec<String> {
         .collect()
 }
 
+/// Convert 15% of the words to numbers
 pub fn convert_15_percent_to_numbers(vec: Vec<String>) -> Vec<String> {
     let mut rng = thread_rng();
     let total_count = vec.len();
-    let convert_count = (total_count as f64 * 0.15).ceil() as usize;
+    let convert_count = (total_count as f64 * 0.1).ceil() as usize;
 
     let mut indices: Vec<usize> = (0..total_count).collect();
     indices.shuffle(&mut rng);
@@ -92,7 +100,7 @@ pub fn convert_15_percent_to_numbers(vec: Vec<String>) -> Vec<String> {
         .enumerate()
         .map(|(i, s)| {
             if convert_indices.contains(&i) {
-                rng.gen_range(0..1000).to_string()
+                rng.gen_range(0..10000).to_string()
             } else {
                 s
             }
@@ -100,6 +108,7 @@ pub fn convert_15_percent_to_numbers(vec: Vec<String>) -> Vec<String> {
         .collect()
 }
 
+/// Add symbols to 20% of the words
 pub fn add_symbols(vec: Vec<String>) -> Vec<String> {
     let mut rng = thread_rng();
     let total_count = vec.len();
@@ -111,7 +120,7 @@ pub fn add_symbols(vec: Vec<String>) -> Vec<String> {
     let modify_indices = &indices[..modify_count];
 
     let common_symbols = [',', '.'];
-    let less_common_symbols = ['?', '-', '!', ':'];
+    let less_common_symbols = ['?', '_', '-', '!', ':'];
     let surrounding_symbols = ["()", "\"\""];
 
     vec.into_iter()

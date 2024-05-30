@@ -8,6 +8,7 @@ mod utils;
 use color_eyre::{eyre::WrapErr, Result};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use options::{CyclicOption, Highlight, NumberOfWords, TextDifficulty};
+use ratatui::layout::Rect;
 use std::time::Duration;
 use text_generator::{Character, TextGenerator};
 use timer::Timer;
@@ -29,6 +30,7 @@ pub struct App {
     difficulty: CyclicOption<TextDifficulty>,
     highlight: CyclicOption<Highlight>,
     showing_stats: bool,
+    showing_size_warning: bool,
 }
 
 #[derive(Debug)]
@@ -37,6 +39,8 @@ struct TypingEvent {
     error: bool,
 }
 
+const TYPING_AREA_WIDTH: u16 = 72;
+const TYPING_AREA_HEIGHT: u16 = 20;
 const NUMBER_OF_WORDS_KEYBINDING: char = 'w';
 const DIFFICULTY_KEYBINDING: char = 'd';
 const HIGHLIGHT_KEYBINGING: char = 'h';
@@ -88,6 +92,7 @@ impl App {
             ),
             text_generator: TextGenerator::new(NumberOfWords::Ten, TextDifficulty::Lowercase),
             showing_stats: false,
+            showing_size_warning: false,
         }
     }
 
@@ -98,14 +103,27 @@ impl App {
             .wrap_err("Loading word list failed.")?;
 
         // Generate lines of characters
-        self.lines = self.text_generator.generate_lines(50);
+        self.lines = self.text_generator.generate_lines(TYPING_AREA_WIDTH - 6);
 
         while !self.quit {
-            terminal.draw(|frame| ui(frame, self))?;
+            terminal.draw(|frame| {
+                let size = frame.size();
+                self.check_size(size);
+                ui(frame, self)
+            })?;
             self.handle_events().wrap_err("handle events failed")?;
         }
 
         Ok(())
+    }
+
+    fn check_size(&mut self, size: Rect) {
+        if size.width < TYPING_AREA_WIDTH || size.height < TYPING_AREA_HEIGHT {
+            self.showing_size_warning = true;
+            self.pause();
+        } else {
+            self.showing_size_warning = false;
+        }
     }
 
     /// updates the application's state based on user input
@@ -254,6 +272,6 @@ impl App {
             .load_words()
             .wrap_err("Loading words failed.")
             .unwrap();
-        self.lines = self.text_generator.generate_lines(50);
+        self.lines = self.text_generator.generate_lines(TYPING_AREA_WIDTH - 6);
     }
 }

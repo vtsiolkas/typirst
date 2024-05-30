@@ -73,7 +73,7 @@ impl TextGenerator {
         Ok(())
     }
 
-    pub fn generate_lines(&self, max_len: usize) -> Vec<Vec<Character>> {
+    pub fn generate_lines(&self, max_len: u16) -> Vec<Vec<Character>> {
         let text = self.select_words();
         self.split_string(text, max_len)
     }
@@ -101,7 +101,7 @@ impl TextGenerator {
         words.join(" ")
     }
 
-    fn split_string(&self, input: String, max_len: usize) -> Vec<Vec<Character>> {
+    fn split_string(&self, input: String, max_len: u16) -> Vec<Vec<Character>> {
         let input = self.apply_difficulty(input);
 
         let mut result = Vec::new();
