@@ -4,7 +4,7 @@ use color_eyre::Result;
 use options::TextDifficulty;
 use rand::seq::SliceRandom;
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq)]
 pub enum CharState {
     #[default]
     Untouched,

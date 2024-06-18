@@ -126,10 +126,12 @@ impl App {
     }
 
     fn check_character(&mut self, c: char) {
-        self.typed_chars += 1;
+        // self.typed_chars += 1;
         let error = self.lines[self.cur_line][self.position].set_typed(c);
         if error {
             self.errors += 1;
+        } else {
+            self.typed_chars += 1;
         }
         self.position += 1;
 
@@ -205,6 +207,11 @@ impl App {
                         self.position = self.lines[self.cur_line].len() - 1;
                     }
 
+                    if self.lines[self.cur_line][self.position].state
+                        == text_generator::CharState::Correct
+                    {
+                        self.typed_chars -= 1;
+                    }
                     self.lines[self.cur_line][self.position].reset();
                 }
 
