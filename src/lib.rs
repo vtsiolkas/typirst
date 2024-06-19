@@ -126,7 +126,6 @@ impl App {
     }
 
     fn check_character(&mut self, c: char) {
-        // self.typed_chars += 1;
         let error = self.lines[self.cur_line][self.position].set_typed(c);
         if error {
             self.errors += 1;
